@@ -67,13 +67,13 @@ pub struct MetadataCollection {
 
 /// Metadata account defines a set of metadata items
 ///
-// PDA seeds: 'metadata' + [metadata_key_id] + [target] + [create_authority]
+// PDA seeds: 'metadata' + [metadata_key_id] + [subject] + [create_authority]
 pub struct Metadata {
     /// Unique identifier of the MetadataKey describing the collection
     pub metadata_key_id: u64,
 
-    /// The target of the metadata (e.g. a DAO, NFT, a program etc.)
-    pub target: Pubkey,
+    /// The subject described by the metadata (e.g. a DAO, NFT, a program etc.)
+    pub subject: Pubkey,
 
     /// The default update authority for all the collections
     /// Note: The authority can be overridden at the collection level
