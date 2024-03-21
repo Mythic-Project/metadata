@@ -23,6 +23,9 @@ pub struct MetadataKey {
     /// It must be unique within the namespace authority
     pub name: String,
 
+    /// User friendly label of the MetadataKey
+    pub label: String,
+
     /// Description of the MetadataKey
     pub description: String,
 
