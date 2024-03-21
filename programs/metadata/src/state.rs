@@ -80,6 +80,9 @@ pub struct Metadata {
     /// Metadata can be self issued by the subject or issued by a third party
     /// For example a DAO can issue metadata about itself using the DAO's authority
     /// Or external authority can issue claims, certifications etc. about the DAO
+    ///
+    /// TODO:
+    /// - Should is also be allowed to close the account?
     pub issuing_authority: Pubkey,
 
     /// The default update authority for all the collections
