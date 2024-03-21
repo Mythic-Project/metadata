@@ -1,4 +1,4 @@
-use anchor_lang::{prelude::*, solana_program::clock::UnixTimestamp};
+use anchor_lang::prelude::*;
 
 /// MetadataKey account defines a single metadata item
 ///
@@ -40,6 +40,9 @@ pub struct MetadataItem {
 
     /// Serialized metadata item value
     pub value: Vec<u8>,
+
+    /// The slot when the value was last updated
+    pub update_slot: u64,
 }
 
 pub struct MetadataCollection {
