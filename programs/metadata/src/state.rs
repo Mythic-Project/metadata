@@ -65,7 +65,7 @@ pub struct MetadataCollection {
 
 /// Metadata account defines a set of metadata items
 ///
-// PDA seeds: 'metadata' + [metadata_key_id] + [subject] + [metadata_authority]
+// PDA seeds: 'metadata' + [metadata_key_id] + [subject] + [issuing_authority]
 pub struct Metadata {
     /// Unique identifier of the MetadataKey describing the collection
     pub metadata_key_id: u64,
@@ -73,10 +73,14 @@ pub struct Metadata {
     /// The subject described by the metadata (e.g. a DAO, NFT, a program etc.)
     pub subject: Pubkey,
 
-    /// The authority which created the Metadata account and owns it
+    /// The authority which issued (created) the Metadata account and owns it
     /// Note: The authority is embedded in the PDA seeds and cannot be changed
     /// If a new authority is required then a new Metadata account must be created
-    pub metadata_authority: Pubkey,
+    ///
+    /// Metadata can be self issued by the subject or issued by a third party
+    /// For example a DAO can issue metadata about itself using the DAO's authority
+    /// Or external authority can issue claims, certifications etc. about the DAO
+    pub issuing_authority: Pubkey,
 
     /// The default update authority for all the collections
     /// Note: The authority can be overridden at the collection level
