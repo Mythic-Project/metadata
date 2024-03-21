@@ -31,9 +31,6 @@ pub struct MetadataKey {
 
     /// The type of the metadata item (e.g. string, number, image, metadata-collection etc.)
     pub content_type: String,
-
-    /// The authority that can certify the metadata item authenticity (optional)
-    pub certification_authority: Option<Pubkey>,
 }
 
 /// MetadataItem defines a single metadata item identified by its MetadataKey
@@ -55,14 +52,6 @@ pub struct MetadataCollection {
 
     /// Metadata items of the collection
     pub items: Vec<MetadataItem>,
-
-    /// Indicates whether the collection is certified by the certification authority
-    /// Any change to the collection metadata invalidates its certification status
-    pub certified: bool,
-
-    /// The time when the certification expires (optional)
-    /// Or None if the collection is certified indefinitely
-    pub certification_expiry: Option<UnixTimestamp>,
 
     /// The slot when the collection was last updated
     pub update_slot: u64,
