@@ -11,6 +11,8 @@ use anchor_lang::prelude::*;
 ///
 /// 2) SetCertificationAuthority - Sets the certification authority for the MetadataKey
 /// Current certification_authority must sign the transaction
+///
+/// Note: MetadataKey can describe Metadata account, MetadataCollection and MetadataItem
 pub struct MetadataKey {
     /// Unique identifier of the MetadataKey assigned by the program
     pub id: u64,
@@ -29,7 +31,8 @@ pub struct MetadataKey {
     /// Description of the MetadataKey
     pub description: String,
 
-    /// The type of the metadata item (e.g. string, number, image, metadata-collection etc.)
+    /// The type of the metadata described by the key
+    /// e.g. string, number, image, metadata, metadata-collection etc.
     pub content_type: String,
 }
 
