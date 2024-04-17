@@ -9,9 +9,6 @@ use anchor_lang::prelude::*;
 /// 1) CreateMetadataKey - Creates a new MetadataKey
 /// namespace_authority must sign the transaction
 ///
-/// 2) SetCertificationAuthority - Sets the certification authority for the MetadataKey
-/// Current certification_authority must sign the transaction
-///
 /// Note: MetadataKey can describe Metadata account, MetadataCollection and MetadataItem
 pub struct MetadataKey {
     /// Unique identifier of the MetadataKey assigned by the program
