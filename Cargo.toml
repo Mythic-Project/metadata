@@ -1,5 +1,9 @@
 [workspace]
 members = ["programs/*"]
+resolver = "2"
+
+[workspace.dependencies]
+anchor-lang = "0.30.0"
 
 [profile.release]
 overflow-checks = true
