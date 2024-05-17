@@ -1,13 +1,15 @@
 use anchor_lang::prelude::*;
 
 #[error_code]
-pub enum DaoMetadataError {
+pub enum MythicMetadataError {
+    #[msg("Cannot increment ID")]
+    CounterIdReachedMax,
     #[msg("Invalid account owner")]
     InvalidAccountOwner,
     #[msg("Unauthorized")]
     Unauthorized,
-    #[msg("Invalid MetadataKey field")]
-    InvalidMetadataKeyField,
+    #[msg("Invalid MetadataKey")]
+    InvalidMetadataKey,
     #[msg("Metadata collection is full")]
     MetadataCollectionFull,
     #[msg("Metadata collection already exists")]

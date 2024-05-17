@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 
+use crate::constants::*;
 use crate::errors::*;
 
 #[account]
@@ -8,26 +9,28 @@ use crate::errors::*;
 pub struct MetadataKey {
     /// Bump
     pub bump: u8,
+    /// Id
+    pub id: u64,
     /// Authority of the MetadataKey namespace
     /// It allows authorities to create unique namespaces for metadata keys
     pub namespace_authority: Pubkey,
 
     /// Name of the MetadataKey
     /// It must be unique within the namespace authority
-    #[max_len(30)]
+    #[max_len(MAX_NAME_LEN)]
     pub name: String,
 
     /// User friendly label of the MetadataKey
-    #[max_len(50)]
+    #[max_len(MAX_LABEL_LEN)]
     pub label: String,
 
     /// Description of the MetadataKey
-    #[max_len(100)]
+    #[max_len(MAX_DESCRPTION_LEN)]
     pub description: String,
 
     /// The type of the metadata described by the key
     /// e.g. string, number, image, metadata, metadata-collection etc.
-    #[max_len(20)]
+    #[max_len(MAX_CONTENT_TYPE_LEN)]
     pub content_type: String,
 }
 
@@ -37,9 +40,12 @@ impl MetadataKey {
     }
 
     pub fn validate(name: &str, label: &str, description: &str, content_type: &str) -> Result<()> {
-        if name.len() > 30 || label.len() > 50 || description.len() > 100 || content_type.len() > 20
+        if name.len() > MAX_NAME_LEN
+            || label.len() > MAX_LABEL_LEN
+            || description.len() > MAX_DESCRPTION_LEN
+            || content_type.len() > MAX_CONTENT_TYPE_LEN
         {
-            return err!(DaoMetadataError::InvalidMetadataKeyField);
+            return err!(MythicMetadataError::InvalidMetadataKey);
         }
 
         Ok(())

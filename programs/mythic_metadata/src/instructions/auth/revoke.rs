@@ -11,7 +11,7 @@ pub struct RevokeCollectionUpdateAuthority<'info> {
     pub update_authority: Signer<'info>,
     #[account(
         mut,
-        has_one = metadata_key @ DaoMetadataError::InvalidMetadataKeyField,
+        constraint = metadata.metadata_key_id.eq(&metadata_key.id) @ MythicMetadataError::InvalidMetadataKey,
         seeds = [
             PREFIX,
             METADATA,
@@ -51,7 +51,7 @@ pub fn handler(ctx: Context<RevokeCollectionUpdateAuthority>) -> Result<()> {
 
     let (collection_index, mut collection) = verify_collection_update_authority(
         &metadata,
-        &collection_metadata_key.key(),
+        collection_metadata_key.id,
         &update_authority.key(),
     )?;
 

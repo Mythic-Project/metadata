@@ -5,7 +5,7 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-metadata = "DAom1h29CGo2G5WRvLPeZeTqN96ft22YfZU4yt82RCh"
+mythic_metadata = "myThHf7Ec8WEFiVFeUEiuq1KPPmx3udRF7hehPQBaa3"
 
 [registry]
 url = "https://api.apr.dev"

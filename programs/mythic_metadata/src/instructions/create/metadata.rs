@@ -46,7 +46,7 @@ pub fn handler(ctx: Context<CreateMetadata>, args: CreateMetadataArgs) -> Result
     let metadata = &mut ctx.accounts.metadata;
     metadata.set_inner(Metadata {
         bump: ctx.bumps.metadata,
-        metadata_key: ctx.accounts.metadata_key.key(),
+        metadata_key_id: ctx.accounts.metadata_key.id,
         update_authority: update_authority.unwrap_or(ctx.accounts.issuing_authority.key()),
         issuing_authority: ctx.accounts.issuing_authority.key(),
         subject,
