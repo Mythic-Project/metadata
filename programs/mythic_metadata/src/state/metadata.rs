@@ -1,25 +1,26 @@
 use anchor_lang::prelude::*;
 
+use crate::constants::*;
 use crate::errors::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
 /// MetadataItem defines a single metadata item identified by its MetadataKey
 pub struct MetadataItem {
-    /// The Metadata Key PDA address
-    pub metadata_key: Pubkey,
+    /// The Metadata Key numeric Id
+    pub metadata_key_id: u64,
 
     /// The slot when the value was last updated
     pub update_slot: u64,
 
     /// Serialized metadata item value
-    #[max_len(100)]
+    #[max_len(MAX_VALUE_LEN)]
     pub value: Vec<u8>,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
 pub struct MetadataCollection {
-    /// The Metadata Key PDA address
-    pub metadata_key: Pubkey,
+    /// The Metadata Key numeric Id
+    pub metadata_key_id: u64,
 
     /// The slot when the collection was last updated
     pub update_slot: u64,
@@ -38,9 +39,8 @@ pub struct MetadataCollection {
 pub struct Metadata {
     /// Bump
     pub bump: u8,
-    /// MetadataKey describing the collection
-    pub metadata_key: Pubkey,
-
+    /// The Metadata Key numeric Id
+    pub metadata_key_id: u64,
     /// The subject described by the metadata (e.g. a DAO, NFT, a program etc.)
     pub subject: Pubkey,
 
@@ -61,7 +61,7 @@ pub struct Metadata {
     pub update_authority: Pubkey,
 
     /// A set of metadata collections
-    #[max_len(5)]
+    #[max_len(MAX_COLLECTIONS_PER_METADATA)]
     pub collections: Vec<MetadataCollection>,
 }
 
@@ -71,8 +71,8 @@ impl Metadata {
     }
 
     pub fn validate(&self) -> Result<()> {
-        if self.collections.len() > 20 {
-            return err!(DaoMetadataError::MetadataCollectionFull);
+        if self.collections.len() > MAX_COLLECTIONS_PER_METADATA {
+            return err!(MythicMetadataError::MetadataCollectionFull);
         }
         Ok(())
     }

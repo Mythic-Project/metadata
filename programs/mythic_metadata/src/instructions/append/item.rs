@@ -11,7 +11,7 @@ pub struct AppendMetadataItem<'info> {
     pub update_authority: Signer<'info>,
     #[account(
         mut,
-        has_one = metadata_key @ DaoMetadataError::InvalidMetadataKeyField,
+        constraint = metadata.metadata_key_id.eq(&metadata_key.id) @ MythicMetadataError::InvalidMetadataKey,
         seeds = [
             PREFIX,
             METADATA,
@@ -62,22 +62,22 @@ pub fn handler(ctx: Context<AppendMetadataItem>, args: AppendMetadataItemArgs) -
 
     let (collection_index, mut collection) = verify_collection_update_authority(
         &metadata,
-        &collection_metadata_key.key(),
+        collection_metadata_key.id,
         &update_authority.key(),
     )?;
 
     match collection
         .items
-        .binary_search_by_key(&item_metadata_key.key(), |item| item.metadata_key)
+        .binary_search_by_key(&item_metadata_key.id, |item| item.metadata_key_id)
     {
-        Ok(_) => return err!(DaoMetadataError::MetadataItemAlreadyExists),
+        Ok(_) => return err!(MythicMetadataError::MetadataItemAlreadyExists),
         Err(item_index) => {
             let slot = Clock::get()?.slot;
             collection.update_slot = slot;
             collection.items.insert(
                 item_index,
                 MetadataItem {
-                    metadata_key: item_metadata_key.key(),
+                    metadata_key_id: item_metadata_key.id,
                     update_slot: slot,
                     value: args.value,
                 },

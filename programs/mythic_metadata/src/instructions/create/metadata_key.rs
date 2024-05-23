@@ -11,6 +11,15 @@ pub struct CreateMetadataKey<'info> {
     #[account()]
     pub namespace_authority: Signer<'info>,
     #[account(
+        mut,
+        seeds = [
+            PREFIX,
+            COUNTER,
+        ],
+        bump = counter.bump
+    )]
+    pub counter: Account<'info, Counter>,
+    #[account(
         init,
         payer = payer,
         space = MetadataKey::size(),
@@ -36,14 +45,20 @@ pub fn handler(ctx: Context<CreateMetadataKey>, args: CreateMetadataKeyArgs) -> 
     MetadataKey::validate(&name, &label, &description, &content_type)?;
 
     let metadata_key = &mut ctx.accounts.metadata_key;
+    let counter = &mut ctx.accounts.counter;
+
     metadata_key.set_inner(MetadataKey {
         bump: ctx.bumps.metadata_key,
+        id: counter.id,
         namespace_authority: ctx.accounts.namespace_authority.key(),
         name,
         description,
         label,
         content_type,
     });
+
+    counter.id += 1;
+    counter.validate()?;
 
     Ok(())
 }

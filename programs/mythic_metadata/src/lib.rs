@@ -1,7 +1,7 @@
 #![allow(ambiguous_glob_reexports)]
 use anchor_lang::prelude::*;
 
-declare_id!("DAom1h29CGo2G5WRvLPeZeTqN96ft22YfZU4yt82RCh");
+declare_id!("myThHf7Ec8WEFiVFeUEiuq1KPPmx3udRF7hehPQBaa3");
 
 pub mod constants;
 pub mod errors;
@@ -12,8 +12,12 @@ pub mod utils;
 pub use instructions::*;
 
 #[program]
-pub mod metadata {
+pub mod mythic_metadata {
     use super::*;
+
+    pub fn initialize_counter(ctx: Context<InitializeCounter>) -> Result<()> {
+        create::counter::handler(ctx)
+    }
 
     pub fn create_metadata_key(
         ctx: Context<CreateMetadataKey>,

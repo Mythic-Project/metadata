@@ -8,13 +8,13 @@ use crate::state::*;
 
 pub fn verify_collection_update_authority(
     metadata: &Metadata,
-    collection_metadata_key: &Pubkey,
+    collection_metadata_key_id: u64,
     update_authority: &Pubkey,
 ) -> Result<(usize, MetadataCollection)> {
     match metadata
         .collections
-        .binary_search_by_key(&collection_metadata_key.key(), |collection| {
-            collection.metadata_key
+        .binary_search_by_key(&collection_metadata_key_id, |collection| {
+            collection.metadata_key_id
         }) {
         Ok(collection_index) => {
             let metadata_update_authority = metadata.update_authority;
@@ -30,12 +30,12 @@ pub fn verify_collection_update_authority(
             require_eq!(
                 &expected_collection_update_authority,
                 update_authority,
-                DaoMetadataError::Unauthorized
+                MythicMetadataError::Unauthorized
             );
 
             return Ok((collection_index, collection.clone()));
         }
-        Err(_) => return err!(DaoMetadataError::MetadataCollectionNonExistent),
+        Err(_) => return err!(MythicMetadataError::MetadataCollectionNonExistent),
     };
 }
 
@@ -48,7 +48,7 @@ pub fn realloc_account<'a>(
     require_keys_eq!(
         *account.owner,
         crate::id(),
-        DaoMetadataError::InvalidAccountOwner
+        MythicMetadataError::InvalidAccountOwner
     );
 
     let current_account_size = account.data.borrow().len();

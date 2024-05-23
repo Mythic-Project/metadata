@@ -1,12 +1,12 @@
 [package]
-name = "metadata"
+name = "mythic_metadata"
 version = "0.1.0"
 description = "Metadata program"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "metadata"
+name = "mythic_metadata"
 
 [features]
 no-entrypoint = []

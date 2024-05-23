@@ -1,6 +1,5 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { Metadata } from "../target/types/metadata";
 import {
   ComputeBudgetProgram,
   ConfirmOptions,
@@ -11,10 +10,16 @@ import {
   SystemProgram,
 } from "@solana/web3.js";
 import { expect } from "chai";
+import { MythicMetadata } from "../target/types/mythic_metadata";
 
-const PREFIX = new TextEncoder().encode("metadata_program");
+const PREFIX = new TextEncoder().encode("mythic_metadata");
+const COUNTER = new TextEncoder().encode("counter");
 const METADATA_KEY = new TextEncoder().encode("metadata_key");
 const METADATA = new TextEncoder().encode("metadata");
+
+function getCounter(programId: PublicKey) {
+  return PublicKey.findProgramAddressSync([PREFIX, COUNTER], programId);
+}
 
 function getMetadataKey(
   nameSpaceAuth: PublicKey,
@@ -56,8 +61,9 @@ describe("metadata", () => {
   // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
-  const daoMetadataProgram = anchor.workspace.Metadata as Program<Metadata>;
-  const { programId } = daoMetadataProgram;
+  const mythicMetadataProgram = anchor.workspace
+    .MythicMetadata as Program<MythicMetadata>;
+  const { programId } = mythicMetadataProgram;
 
   const { connection, wallet } = provider;
 
@@ -101,6 +107,34 @@ describe("metadata", () => {
   });
 
   describe("Metadata", () => {
+    const [counter, counterBump] = getCounter(programId);
+
+    describe("after initializing counter account", () => {
+      let counterData;
+      before(async () => {
+        await mythicMetadataProgram.methods
+          .initializeCounter()
+          .accountsStrict({
+            counter,
+            payer: wallet.publicKey,
+            systemProgram: SystemProgram.programId,
+          })
+          .rpc(confirmOptions);
+
+        counterData = await mythicMetadataProgram.account.counter.fetch(
+          counter
+        );
+      });
+
+      it("should have the right bump", () => {
+        expect(counterData.bump).to.eql(counterBump);
+      });
+
+      it("should set the id to 1", () => {
+        expect(counterData.id.toString()).to.eql("1");
+      });
+    });
+
     describe("after creating metadata key", () => {
       const { name, contentType, description, label } = {
         contentType: "metadata",
@@ -119,10 +153,12 @@ describe("metadata", () => {
       const bump = metadataKeyBatch[1];
 
       let metadataMetadataKeyData;
+      let counterData;
       before(async () => {
-        await daoMetadataProgram.methods
+        await mythicMetadataProgram.methods
           .createMetadataKey({ name, contentType, description, label })
           .accountsStrict({
+            counter,
             metadataKey: metadataMetadataKey,
             namespaceAuthority: metadataKeyAuthKeypair.publicKey,
             payer: wallet.publicKey,
@@ -135,9 +171,13 @@ describe("metadata", () => {
           .rpc(confirmOptions);
 
         metadataMetadataKeyData =
-          await daoMetadataProgram.account.metadataKey.fetch(
+          await mythicMetadataProgram.account.metadataKey.fetch(
             metadataMetadataKey
           );
+
+        counterData = await mythicMetadataProgram.account.counter.fetch(
+          counter
+        );
       });
 
       it("should have right bump", () => {
@@ -165,6 +205,14 @@ describe("metadata", () => {
       it("should have right contentType", () => {
         expect(metadataMetadataKeyData.contentType).to.eql(contentType);
       });
+
+      it("should have right id", () => {
+        expect(metadataMetadataKeyData.id.toString()).to.eql("1");
+      });
+
+      it("should have incremented counter id by 1", () => {
+        expect(counterData.id.toString()).to.eql("2");
+      });
     });
 
     describe("after creating metadata", () => {
@@ -180,7 +228,7 @@ describe("metadata", () => {
 
       let metadataData;
       before(async () => {
-        await daoMetadataProgram.methods
+        await mythicMetadataProgram.methods
           .createMetadata({
             subject: demoSubject,
             updateAuthority: metadataAuthKeypair.publicKey,
@@ -195,7 +243,7 @@ describe("metadata", () => {
           .signers([metadataAuthKeypair])
           .rpc(confirmOptions);
 
-        metadataData = await daoMetadataProgram.account.metadata.fetch(
+        metadataData = await mythicMetadataProgram.account.metadata.fetch(
           metadataKey
         );
       });
@@ -239,10 +287,12 @@ describe("metadata", () => {
       const bump = metadataCollectionKeyBatch[1];
 
       let metadataCollectionMetadataKeyData;
+      let counterData;
       before(async () => {
-        await daoMetadataProgram.methods
+        await mythicMetadataProgram.methods
           .createMetadataKey({ name, contentType, description, label })
           .accountsStrict({
+            counter,
             metadataKey: metadataCollectionMetadataKey,
             namespaceAuthority: metadataKeyAuthKeypair.publicKey,
             payer: wallet.publicKey,
@@ -255,9 +305,13 @@ describe("metadata", () => {
           .rpc(confirmOptions);
 
         metadataCollectionMetadataKeyData =
-          await daoMetadataProgram.account.metadataKey.fetch(
+          await mythicMetadataProgram.account.metadataKey.fetch(
             metadataCollectionMetadataKey
           );
+
+        counterData = await mythicMetadataProgram.account.counter.fetch(
+          counter
+        );
       });
 
       it("should have right bump", () => {
@@ -289,13 +343,21 @@ describe("metadata", () => {
           contentType
         );
       });
+
+      it("should have right id", () => {
+        expect(metadataCollectionMetadataKeyData.id.toString()).to.eql("2");
+      });
+
+      it("should have incremented counter id by 1", () => {
+        expect(counterData.id.toString()).to.eql("3");
+      });
     });
 
     describe("after appending collection to metadata", () => {
       let metadataData;
       let collection;
       before(async () => {
-        await daoMetadataProgram.methods
+        await mythicMetadataProgram.methods
           .appendMetadataCollection({
             updateAuthority: null,
           })
@@ -308,7 +370,7 @@ describe("metadata", () => {
           .signers([metadataAuthKeypair])
           .rpc(confirmOptions);
 
-        metadataData = await daoMetadataProgram.account.metadata.fetch(
+        metadataData = await mythicMetadataProgram.account.metadata.fetch(
           metadataKey
         );
         collection = metadataData.collections[0];
@@ -318,10 +380,8 @@ describe("metadata", () => {
         expect(metadataData.collections.length).to.eql(1);
       });
 
-      it("should have right metadata key", () => {
-        expect(collection.metadataKey.toString()).to.eql(
-          metadataCollectionMetadataKey.toString()
-        );
+      it("should have right metadata key id", () => {
+        expect(collection.metadataKeyId.toString()).to.eql("2");
       });
 
       it("collection update authority should be null", () => {
@@ -332,7 +392,7 @@ describe("metadata", () => {
     describe("after setting collection update authority", () => {
       let metadataData;
       before(async () => {
-        await daoMetadataProgram.methods
+        await mythicMetadataProgram.methods
           .setCollectionUpdateAuthority({
             newUpdateAuthority: metadataCollectionUpdateAuthKeypair.publicKey,
           })
@@ -345,7 +405,7 @@ describe("metadata", () => {
           .signers([metadataAuthKeypair])
           .rpc(confirmOptions);
 
-        metadataData = await daoMetadataProgram.account.metadata.fetch(
+        metadataData = await mythicMetadataProgram.account.metadata.fetch(
           metadataKey
         );
       });
@@ -376,10 +436,12 @@ describe("metadata", () => {
       const bump = metadataItemKeyBatch[1];
 
       let metadataItemMetadataKeyData;
+      let counterData;
       before(async () => {
-        await daoMetadataProgram.methods
+        await mythicMetadataProgram.methods
           .createMetadataKey({ name, contentType, description, label })
           .accountsStrict({
+            counter,
             metadataKey: metadataItemMetadataKey,
             namespaceAuthority: metadataKeyAuthKeypair.publicKey,
             payer: wallet.publicKey,
@@ -392,9 +454,13 @@ describe("metadata", () => {
           .rpc(confirmOptions);
 
         metadataItemMetadataKeyData =
-          await daoMetadataProgram.account.metadataKey.fetch(
+          await mythicMetadataProgram.account.metadataKey.fetch(
             metadataItemMetadataKey
           );
+
+        counterData = await mythicMetadataProgram.account.counter.fetch(
+          counter
+        );
       });
 
       it("should have right bump", () => {
@@ -422,6 +488,14 @@ describe("metadata", () => {
       it("should have right contentType", () => {
         expect(metadataItemMetadataKeyData.contentType).to.eql(contentType);
       });
+
+      it("should have right id", () => {
+        expect(metadataItemMetadataKeyData.id.toString()).to.eql("3");
+      });
+
+      it("should have incremented counter id by 1", () => {
+        expect(counterData.id.toString()).to.eql("4");
+      });
     });
 
     describe("after appending metadata item to metadata collection", () => {
@@ -432,7 +506,7 @@ describe("metadata", () => {
       let item;
 
       before(async () => {
-        await daoMetadataProgram.methods
+        await mythicMetadataProgram.methods
           .appendMetadataItem({
             value: Buffer.from(favoriteColor),
           })
@@ -446,7 +520,7 @@ describe("metadata", () => {
           .signers([metadataCollectionUpdateAuthKeypair])
           .rpc(confirmOptions);
 
-        metadataData = await daoMetadataProgram.account.metadata.fetch(
+        metadataData = await mythicMetadataProgram.account.metadata.fetch(
           metadataKey
         );
         collection = metadataData.collections[0];
@@ -457,10 +531,8 @@ describe("metadata", () => {
         expect(collection.items.length).to.eql(1);
       });
 
-      it("should have right metadata key", () => {
-        expect(item.metadataKey.toString()).to.eql(
-          metadataItemMetadataKey.toString()
-        );
+      it("should have right metadata key id", () => {
+        expect(item.metadataKeyId.toString()).to.eql("3");
       });
 
       it("should have right value", () => {
@@ -471,7 +543,7 @@ describe("metadata", () => {
     describe("after revoking collection update authority", () => {
       let metadataData;
       before(async () => {
-        await daoMetadataProgram.methods
+        await mythicMetadataProgram.methods
           .revokeCollectionUpdateAuthority()
           .accountsStrict({
             collectionMetadataKey: metadataCollectionMetadataKey,
@@ -482,7 +554,7 @@ describe("metadata", () => {
           .signers([metadataCollectionUpdateAuthKeypair])
           .rpc(confirmOptions);
 
-        metadataData = await daoMetadataProgram.account.metadata.fetch(
+        metadataData = await mythicMetadataProgram.account.metadata.fetch(
           metadataKey
         );
       });

@@ -3,15 +3,15 @@ use anchor_lang::prelude::*;
 use crate::constants::*;
 use crate::errors::*;
 use crate::state::*;
-use crate::utils::*;
 
 #[derive(Accounts)]
-pub struct SetCollectionUpdateAuthority<'info> {
+pub struct AppendMetadataCollection<'info> {
     #[account()]
     pub update_authority: Signer<'info>,
     #[account(
         mut,
-        has_one = metadata_key @ DaoMetadataError::InvalidMetadataKeyField,
+        has_one = update_authority @ MythicMetadataError::Unauthorized,
+        constraint = metadata.metadata_key_id.eq(&metadata_key.id) @ MythicMetadataError::InvalidMetadataKey,
         seeds = [
             PREFIX,
             METADATA,
@@ -45,27 +45,33 @@ pub struct SetCollectionUpdateAuthority<'info> {
 }
 
 pub fn handler(
-    ctx: Context<SetCollectionUpdateAuthority>,
-    args: SetCollectionUpdateAuthorityArgs,
+    ctx: Context<AppendMetadataCollection>,
+    args: AppendMetadataCollectionArgs,
 ) -> Result<()> {
     let metadata = &mut ctx.accounts.metadata;
     let collection_metadata_key = &ctx.accounts.collection_metadata_key;
-    let update_authority = &ctx.accounts.update_authority;
 
-    let (collection_index, mut collection) = verify_collection_update_authority(
-        &metadata,
-        &collection_metadata_key.key(),
-        &update_authority.key(),
-    )?;
-
-    collection.update_authority = Some(args.new_update_authority);
-    metadata.collections.remove(collection_index);
-    metadata.collections.insert(collection_index, collection);
+    match metadata
+        .collections
+        .binary_search_by_key(&collection_metadata_key.id, |collection| {
+            collection.metadata_key_id
+        }) {
+        Ok(_) => return err!(MythicMetadataError::MetadataCollectionAlreadyExists),
+        Err(collection_index) => metadata.collections.insert(
+            collection_index,
+            MetadataCollection {
+                metadata_key_id: collection_metadata_key.id,
+                update_authority: args.update_authority,
+                update_slot: Clock::get()?.slot,
+                items: vec![],
+            },
+        ),
+    };
 
     Ok(())
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct SetCollectionUpdateAuthorityArgs {
-    pub new_update_authority: Pubkey,
+pub struct AppendMetadataCollectionArgs {
+    pub update_authority: Option<Pubkey>,
 }
