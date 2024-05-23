@@ -26,8 +26,7 @@ pub struct AppendMetadataItem<'info> {
         seeds = [
             PREFIX,
             METADATA_KEY,
-            metadata_key.namespace_authority.as_ref(),
-            metadata_key.name.as_bytes()
+            &metadata_key.id.to_le_bytes()
         ],
         bump,
     )]
@@ -36,8 +35,7 @@ pub struct AppendMetadataItem<'info> {
         seeds = [
             PREFIX,
             METADATA_KEY,
-            collection_metadata_key.namespace_authority.as_ref(),
-            collection_metadata_key.name.as_bytes()
+            &collection_metadata_key.id.to_le_bytes()
         ],
         bump,
     )]
@@ -46,8 +44,7 @@ pub struct AppendMetadataItem<'info> {
         seeds = [
             PREFIX,
             METADATA_KEY,
-            item_metadata_key.namespace_authority.as_ref(),
-            item_metadata_key.name.as_bytes()
+            &item_metadata_key.id.to_le_bytes()
         ],
         bump,
     )]

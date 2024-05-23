@@ -17,17 +17,9 @@ const COUNTER = new TextEncoder().encode("counter");
 const METADATA_KEY = new TextEncoder().encode("metadata_key");
 const METADATA = new TextEncoder().encode("metadata");
 
-function getCounter(programId: PublicKey) {
-  return PublicKey.findProgramAddressSync([PREFIX, COUNTER], programId);
-}
-
-function getMetadataKey(
-  nameSpaceAuth: PublicKey,
-  name: string,
-  programId: PublicKey
-) {
+function getMetadataKey(id: number, programId: PublicKey) {
   return PublicKey.findProgramAddressSync(
-    [PREFIX, METADATA_KEY, nameSpaceAuth.toBuffer(), Buffer.from(name)],
+    [PREFIX, METADATA_KEY, new anchor.BN(id).toArrayLike(Buffer, "le", 8)],
     programId
   );
 }
@@ -77,6 +69,10 @@ describe("metadata", () => {
     "DEan8xJtNMkEy4CJDRdx7qq67mWexjiHV4uEb19wK8i"
   );
 
+  const metadataMetadataKeyId = 123;
+  const metadataCollectionMetadataKeyId = 456;
+  const metadataItemMetadataKeyId = 789;
+
   const metadataKeyAuthKeypair = new Keypair();
   const metadataAuthKeypair = new Keypair();
   const metadataCollectionUpdateAuthKeypair = new Keypair();
@@ -107,34 +103,6 @@ describe("metadata", () => {
   });
 
   describe("Metadata", () => {
-    const [counter, counterBump] = getCounter(programId);
-
-    describe("after initializing counter account", () => {
-      let counterData;
-      before(async () => {
-        await mythicMetadataProgram.methods
-          .initializeCounter()
-          .accountsStrict({
-            counter,
-            payer: wallet.publicKey,
-            systemProgram: SystemProgram.programId,
-          })
-          .rpc(confirmOptions);
-
-        counterData = await mythicMetadataProgram.account.counter.fetch(
-          counter
-        );
-      });
-
-      it("should have the right bump", () => {
-        expect(counterData.bump).to.eql(counterBump);
-      });
-
-      it("should set the id to 1", () => {
-        expect(counterData.id.toString()).to.eql("1");
-      });
-    });
-
     describe("after creating metadata key", () => {
       const { name, contentType, description, label } = {
         contentType: "metadata",
@@ -143,22 +111,22 @@ describe("metadata", () => {
         name: "dao-metadata",
       };
 
-      const metadataKeyBatch = getMetadataKey(
-        metadataKeyAuthKeypair.publicKey,
-        name,
-        programId
-      );
+      const metadataKeyBatch = getMetadataKey(metadataMetadataKeyId, programId);
 
       metadataMetadataKey = metadataKeyBatch[0];
       const bump = metadataKeyBatch[1];
 
       let metadataMetadataKeyData;
-      let counterData;
       before(async () => {
         await mythicMetadataProgram.methods
-          .createMetadataKey({ name, contentType, description, label })
+          .createMetadataKey({
+            name,
+            contentType,
+            description,
+            label,
+            id: new anchor.BN(metadataMetadataKeyId),
+          })
           .accountsStrict({
-            counter,
             metadataKey: metadataMetadataKey,
             namespaceAuthority: metadataKeyAuthKeypair.publicKey,
             payer: wallet.publicKey,
@@ -174,10 +142,6 @@ describe("metadata", () => {
           await mythicMetadataProgram.account.metadataKey.fetch(
             metadataMetadataKey
           );
-
-        counterData = await mythicMetadataProgram.account.counter.fetch(
-          counter
-        );
       });
 
       it("should have right bump", () => {
@@ -207,11 +171,9 @@ describe("metadata", () => {
       });
 
       it("should have right id", () => {
-        expect(metadataMetadataKeyData.id.toString()).to.eql("1");
-      });
-
-      it("should have incremented counter id by 1", () => {
-        expect(counterData.id.toString()).to.eql("2");
+        expect(metadataMetadataKeyData.id.toString()).to.eql(
+          metadataMetadataKeyId.toString()
+        );
       });
     });
 
@@ -278,8 +240,7 @@ describe("metadata", () => {
       };
 
       const metadataCollectionKeyBatch = getMetadataKey(
-        metadataKeyAuthKeypair.publicKey,
-        name,
+        metadataCollectionMetadataKeyId,
         programId
       );
 
@@ -287,12 +248,16 @@ describe("metadata", () => {
       const bump = metadataCollectionKeyBatch[1];
 
       let metadataCollectionMetadataKeyData;
-      let counterData;
       before(async () => {
         await mythicMetadataProgram.methods
-          .createMetadataKey({ name, contentType, description, label })
+          .createMetadataKey({
+            name,
+            contentType,
+            description,
+            label,
+            id: new anchor.BN(metadataCollectionMetadataKeyId),
+          })
           .accountsStrict({
-            counter,
             metadataKey: metadataCollectionMetadataKey,
             namespaceAuthority: metadataKeyAuthKeypair.publicKey,
             payer: wallet.publicKey,
@@ -308,10 +273,6 @@ describe("metadata", () => {
           await mythicMetadataProgram.account.metadataKey.fetch(
             metadataCollectionMetadataKey
           );
-
-        counterData = await mythicMetadataProgram.account.counter.fetch(
-          counter
-        );
       });
 
       it("should have right bump", () => {
@@ -345,11 +306,9 @@ describe("metadata", () => {
       });
 
       it("should have right id", () => {
-        expect(metadataCollectionMetadataKeyData.id.toString()).to.eql("2");
-      });
-
-      it("should have incremented counter id by 1", () => {
-        expect(counterData.id.toString()).to.eql("3");
+        expect(metadataCollectionMetadataKeyData.id.toString()).to.eql(
+          metadataCollectionMetadataKeyId.toString()
+        );
       });
     });
 
@@ -381,7 +340,9 @@ describe("metadata", () => {
       });
 
       it("should have right metadata key id", () => {
-        expect(collection.metadataKeyId.toString()).to.eql("2");
+        expect(collection.metadataKeyId.toString()).to.eql(
+          metadataCollectionMetadataKeyId.toString()
+        );
       });
 
       it("collection update authority should be null", () => {
@@ -427,8 +388,7 @@ describe("metadata", () => {
       };
 
       const metadataItemKeyBatch = getMetadataKey(
-        metadataKeyAuthKeypair.publicKey,
-        name,
+        metadataItemMetadataKeyId,
         programId
       );
 
@@ -436,12 +396,16 @@ describe("metadata", () => {
       const bump = metadataItemKeyBatch[1];
 
       let metadataItemMetadataKeyData;
-      let counterData;
       before(async () => {
         await mythicMetadataProgram.methods
-          .createMetadataKey({ name, contentType, description, label })
+          .createMetadataKey({
+            name,
+            contentType,
+            description,
+            label,
+            id: new anchor.BN(metadataItemMetadataKeyId),
+          })
           .accountsStrict({
-            counter,
             metadataKey: metadataItemMetadataKey,
             namespaceAuthority: metadataKeyAuthKeypair.publicKey,
             payer: wallet.publicKey,
@@ -457,10 +421,6 @@ describe("metadata", () => {
           await mythicMetadataProgram.account.metadataKey.fetch(
             metadataItemMetadataKey
           );
-
-        counterData = await mythicMetadataProgram.account.counter.fetch(
-          counter
-        );
       });
 
       it("should have right bump", () => {
@@ -490,11 +450,9 @@ describe("metadata", () => {
       });
 
       it("should have right id", () => {
-        expect(metadataItemMetadataKeyData.id.toString()).to.eql("3");
-      });
-
-      it("should have incremented counter id by 1", () => {
-        expect(counterData.id.toString()).to.eql("4");
+        expect(metadataItemMetadataKeyData.id.toString()).to.eql(
+          metadataItemMetadataKeyId.toString()
+        );
       });
     });
 
@@ -532,7 +490,9 @@ describe("metadata", () => {
       });
 
       it("should have right metadata key id", () => {
-        expect(item.metadataKeyId.toString()).to.eql("3");
+        expect(item.metadataKeyId.toString()).to.eql(
+          metadataItemMetadataKeyId.toString()
+        );
       });
 
       it("should have right value", () => {
