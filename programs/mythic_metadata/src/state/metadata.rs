@@ -6,7 +6,7 @@ use crate::errors::*;
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
 /// MetadataItem defines a single metadata item identified by its MetadataKey
 pub struct MetadataItem {
-    /// The Metadata Key numeric Id
+    /// The Metadata Key Id
     pub metadata_key_id: u64,
 
     /// The slot when the value was last updated
@@ -19,14 +19,15 @@ pub struct MetadataItem {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
 pub struct MetadataCollection {
-    /// The Metadata Key numeric Id
+    /// The Metadata Key  Id
     pub metadata_key_id: u64,
 
     /// The slot when the collection was last updated
+    /// The collection update slot is max(update_slot) for all its metadata items
     pub update_slot: u64,
 
     /// The authority that can update the collection metadata items
-    /// Seperate update instructions can be invoked to add/revoke specific collection's update_authority
+    /// Separate update instructions can be invoked to add/revoke specific collection's update_authority
     pub update_authority: Option<Pubkey>,
 
     /// Metadata items of the collection
