@@ -6,7 +6,7 @@ use crate::errors::*;
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
 /// MetadataItem defines a single metadata item identified by its MetadataKey
 pub struct MetadataItem {
-    /// The Metadata Key numeric Id
+    /// The Metadata Key Id
     pub metadata_key_id: u64,
 
     /// The slot when the value was last updated
@@ -19,18 +19,20 @@ pub struct MetadataItem {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
 pub struct MetadataCollection {
-    /// The Metadata Key numeric Id
+    /// The Metadata Key  Id
     pub metadata_key_id: u64,
 
     /// The slot when the collection was last updated
+    /// The collection update slot is max(update_slot) for all its metadata items
     pub update_slot: u64,
 
     /// The authority that can update the collection metadata items
-    /// Seperate update instructions can be invoked to add/revoke specific collection's update_authority
+    /// Separate update instructions can be invoked to add/revoke specific collection's update_authority
+    /// If the collection level update authority is None then parent Metadata update_authority is used
     pub update_authority: Option<Pubkey>,
 
     /// Metadata items of the collection
-    #[max_len(10)]
+    #[max_len(MAX_ITEMS_PER_COLLECTION)]
     pub items: Vec<MetadataItem>,
 }
 
@@ -39,8 +41,10 @@ pub struct MetadataCollection {
 pub struct Metadata {
     /// Bump
     pub bump: u8,
-    /// The Metadata Key numeric Id
+
+    /// The Metadata Key  Id
     pub metadata_key_id: u64,
+
     /// The subject described by the metadata (e.g. a DAO, NFT, a program etc.)
     pub subject: Pubkey,
 
@@ -53,12 +57,13 @@ pub struct Metadata {
     /// Or external authority can issue claims, certifications etc. about the DAO
     ///
     /// TODO:
-    /// - Should is also be allowed to close the account?
+    /// - Should it also be allowed to close the account?
     pub issuing_authority: Pubkey,
 
     /// The default update authority for all the collections (usually issuing_authority)
     /// Note: The authority can be overridden at the collection level
-    pub update_authority: Pubkey,
+    /// Setting the authority to None makes the Metadata immutable
+    pub update_authority: Option<Pubkey>,
 
     /// A set of metadata collections
     #[max_len(MAX_COLLECTIONS_PER_METADATA)]
