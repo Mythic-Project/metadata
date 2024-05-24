@@ -31,7 +31,7 @@ pub struct MetadataCollection {
     pub update_authority: Option<Pubkey>,
 
     /// Metadata items of the collection
-    #[max_len(10)]
+    #[max_len(100)]
     pub items: Vec<MetadataItem>,
 }
 
