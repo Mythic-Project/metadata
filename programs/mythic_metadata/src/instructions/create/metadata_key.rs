@@ -11,23 +11,13 @@ pub struct CreateMetadataKey<'info> {
     #[account()]
     pub namespace_authority: Signer<'info>,
     #[account(
-        mut,
-        seeds = [
-            PREFIX,
-            COUNTER,
-        ],
-        bump = counter.bump
-    )]
-    pub counter: Account<'info, Counter>,
-    #[account(
         init,
         payer = payer,
         space = MetadataKey::size(),
         seeds = [
             PREFIX,
             METADATA_KEY,
-            namespace_authority.key().as_ref(),
-            args.name.as_bytes()
+            &args.id.to_le_bytes()
         ],
         bump,
     )]
@@ -37,6 +27,7 @@ pub struct CreateMetadataKey<'info> {
 
 pub fn handler(ctx: Context<CreateMetadataKey>, args: CreateMetadataKeyArgs) -> Result<()> {
     let CreateMetadataKeyArgs {
+        id,
         name,
         label,
         description,
@@ -45,11 +36,10 @@ pub fn handler(ctx: Context<CreateMetadataKey>, args: CreateMetadataKeyArgs) -> 
     MetadataKey::validate(&name, &label, &description, &content_type)?;
 
     let metadata_key = &mut ctx.accounts.metadata_key;
-    let counter = &mut ctx.accounts.counter;
 
     metadata_key.set_inner(MetadataKey {
         bump: ctx.bumps.metadata_key,
-        id: counter.id,
+        id,
         namespace_authority: ctx.accounts.namespace_authority.key(),
         name,
         description,
@@ -57,14 +47,12 @@ pub fn handler(ctx: Context<CreateMetadataKey>, args: CreateMetadataKeyArgs) -> 
         content_type,
     });
 
-    counter.id += 1;
-    counter.validate()?;
-
     Ok(())
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct CreateMetadataKeyArgs {
+    pub id: u64,
     pub name: String,
     pub label: String,
     pub description: String,

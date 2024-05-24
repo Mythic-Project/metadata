@@ -28,8 +28,7 @@ pub struct CreateMetadata<'info> {
         seeds = [
             PREFIX,
             METADATA_KEY,
-            metadata_key.namespace_authority.as_ref(),
-            metadata_key.name.as_bytes()
+            &metadata_key.id.to_le_bytes()
         ],
         bump,
     )]

@@ -15,10 +15,6 @@ pub use instructions::*;
 pub mod mythic_metadata {
     use super::*;
 
-    pub fn initialize_counter(ctx: Context<InitializeCounter>) -> Result<()> {
-        create::counter::handler(ctx)
-    }
-
     pub fn create_metadata_key(
         ctx: Context<CreateMetadataKey>,
         args: CreateMetadataKeyArgs,
