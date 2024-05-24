@@ -28,10 +28,11 @@ pub struct MetadataCollection {
 
     /// The authority that can update the collection metadata items
     /// Separate update instructions can be invoked to add/revoke specific collection's update_authority
+    /// If the collection level update authority is None then parent Metadata update_authority is used
     pub update_authority: Option<Pubkey>,
 
     /// Metadata items of the collection
-    #[max_len(100)]
+    #[max_len(MAX_ITEMS_PER_COLLECTION)]
     pub items: Vec<MetadataItem>,
 }
 
@@ -40,8 +41,10 @@ pub struct MetadataCollection {
 pub struct Metadata {
     /// Bump
     pub bump: u8,
-    /// The Metadata Key numeric Id
+
+    /// The Metadata Key  Id
     pub metadata_key_id: u64,
+
     /// The subject described by the metadata (e.g. a DAO, NFT, a program etc.)
     pub subject: Pubkey,
 
@@ -54,12 +57,13 @@ pub struct Metadata {
     /// Or external authority can issue claims, certifications etc. about the DAO
     ///
     /// TODO:
-    /// - Should is also be allowed to close the account?
+    /// - Should it also be allowed to close the account?
     pub issuing_authority: Pubkey,
 
     /// The default update authority for all the collections (usually issuing_authority)
     /// Note: The authority can be overridden at the collection level
-    pub update_authority: Pubkey,
+    /// Setting the authority to None makes the Metadata immutable
+    pub update_authority: Option<Pubkey>,
 
     /// A set of metadata collections
     #[max_len(MAX_COLLECTIONS_PER_METADATA)]

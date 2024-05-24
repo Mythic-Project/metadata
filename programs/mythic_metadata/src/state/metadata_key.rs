@@ -9,8 +9,10 @@ use crate::errors::*;
 pub struct MetadataKey {
     /// Bump
     pub bump: u8,
+
     /// Id
     pub id: u64,
+
     /// Authority of the MetadataKey namespace
     /// It allows authorities to create unique namespaces for metadata keys
     pub namespace_authority: Pubkey,
