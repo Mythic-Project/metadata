@@ -3,6 +3,7 @@ use anchor_lang::prelude::*;
 use crate::constants::*;
 use crate::errors::*;
 use crate::state::*;
+use crate::utils::*;
 
 #[derive(Accounts)]
 pub struct AppendMetadataCollection<'info> {
@@ -10,7 +11,6 @@ pub struct AppendMetadataCollection<'info> {
     pub update_authority: Signer<'info>,
     #[account(
         mut,
-        has_one = update_authority @ MythicMetadataError::Unauthorized,
         constraint = metadata.metadata_key_id.eq(&metadata_key.id) @ MythicMetadataError::InvalidMetadataKey,
         seeds = [
             PREFIX,
@@ -46,6 +46,14 @@ pub fn handler(
     ctx: Context<AppendMetadataCollection>,
     args: AppendMetadataCollectionArgs,
 ) -> Result<()> {
+    let metadata = &ctx.accounts.metadata;
+    let update_authority = ctx.accounts.update_authority.key;
+    // Verify metadata update authority
+    require!(
+        verify_metadata_update_authority(metadata, update_authority)?,
+        MythicMetadataError::Unauthorized
+    );
+
     let metadata = &mut ctx.accounts.metadata;
     let collection_metadata_key = &ctx.accounts.collection_metadata_key;
 
