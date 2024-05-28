@@ -8,6 +8,8 @@ pub enum MythicMetadataError {
     InvalidAccountOwner,
     #[msg("Unauthorized")]
     Unauthorized,
+    #[msg("Metadata immutable")]
+    ImmutableMetadata,
     #[msg("Invalid MetadataKey")]
     InvalidMetadataKey,
     #[msg("Metadata collection is full")]

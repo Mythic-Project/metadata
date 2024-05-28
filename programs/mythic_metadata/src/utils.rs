@@ -6,6 +6,21 @@ use anchor_lang::{
 use crate::errors::*;
 use crate::state::*;
 
+pub fn verify_metadata_update_authority(
+    metadata: &Metadata,
+    update_authority: &Pubkey,
+) -> Result<bool> {
+    if metadata.update_authority.is_none() {
+        return err!(MythicMetadataError::ImmutableMetadata);
+    }
+    if let Some(expected_update_authority) = metadata.update_authority {
+        if expected_update_authority.ne(&update_authority) {
+            return Ok(false);
+        }
+    }
+    Ok(true)
+}
+
 pub fn verify_collection_update_authority(
     metadata: &Metadata,
     collection_metadata_key_id: u64,
@@ -17,23 +32,24 @@ pub fn verify_collection_update_authority(
             collection.metadata_key_id
         }) {
         Ok(collection_index) => {
-            let metadata_update_authority = metadata.update_authority;
             let collection = metadata.collections.get(collection_index).unwrap();
 
-            let expected_collection_update_authority =
-                if let Some(update_authority) = collection.update_authority {
-                    update_authority
-                } else {
-                    metadata_update_authority
-                };
-
-            require_eq!(
-                &expected_collection_update_authority,
-                update_authority,
-                MythicMetadataError::Unauthorized
-            );
-
-            return Ok((collection_index, collection.clone()));
+            if collection.update_authority.is_none() {
+                require!(
+                    verify_metadata_update_authority(metadata, update_authority)?,
+                    MythicMetadataError::Unauthorized
+                );
+                return Ok((collection_index, collection.clone()));
+            } else {
+                let collection_update_authority = collection.update_authority.unwrap();
+                if collection_update_authority.ne(&update_authority) {
+                    require!(
+                        verify_metadata_update_authority(metadata, update_authority)?,
+                        MythicMetadataError::Unauthorized
+                    );
+                }
+                return Ok((collection_index, collection.clone()));
+            }
         }
         Err(_) => return err!(MythicMetadataError::MetadataCollectionNonExistent),
     };
