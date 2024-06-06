@@ -6,9 +6,7 @@ use crate::state::*;
 use crate::utils::*;
 
 #[derive(Accounts)]
-pub struct AppendMetadataCollection<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
+pub struct RemoveMetadataCollection<'info> {
     #[account()]
     pub update_authority: Signer<'info>,
     #[account(
@@ -42,13 +40,9 @@ pub struct AppendMetadataCollection<'info> {
         bump,
     )]
     pub collection_metadata_key: Account<'info, MetadataKey>,
-    pub system_program: Program<'info, System>,
 }
 
-pub fn handler(
-    ctx: Context<AppendMetadataCollection>,
-    args: AppendMetadataCollectionArgs,
-) -> Result<()> {
+pub fn handler(ctx: Context<RemoveMetadataCollection>) -> Result<()> {
     let metadata = &ctx.accounts.metadata;
     let update_authority = ctx.accounts.update_authority.key;
 
@@ -67,31 +61,9 @@ pub fn handler(
         .binary_search_by_key(&collection_metadata_key.id, |collection| {
             collection.metadata_key_id
         }) {
-        Ok(_) => return err!(MythicMetadataError::MetadataCollectionAlreadyExists),
-        Err(collection_index) => metadata.collection.collections.insert(
-            collection_index,
-            MetadataCollection {
-                metadata_key_id: collection_metadata_key.id,
-                update_authority: args.update_authority,
-                update_slot: Clock::get()?.slot,
-                items: vec![],
-            },
-        ),
+        Ok(collection_index) => metadata.collection.collections.remove(collection_index),
+        Err(_) => return err!(MythicMetadataError::MetadataCollectionNonExistent),
     };
 
-    metadata.validate()?;
-    let new_account_size = Metadata::size(&metadata.collection);
-    realloc_account(
-        ctx.accounts.metadata.to_account_info(),
-        new_account_size,
-        ctx.accounts.payer.to_account_info(),
-        ctx.accounts.system_program.to_account_info(),
-    )?;
-
     Ok(())
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct AppendMetadataCollectionArgs {
-    pub update_authority: Option<Pubkey>,
 }

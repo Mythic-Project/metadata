@@ -6,7 +6,7 @@ use crate::state::*;
 use crate::utils::*;
 
 #[derive(Accounts)]
-pub struct AppendMetadataItem<'info> {
+pub struct RemoveMetadataItem<'info> {
     #[account()]
     pub update_authority: Signer<'info>,
     #[account(
@@ -51,14 +51,14 @@ pub struct AppendMetadataItem<'info> {
     pub item_metadata_key: Account<'info, MetadataKey>,
 }
 
-pub fn handler(ctx: Context<AppendMetadataItem>, args: AppendMetadataItemArgs) -> Result<()> {
+pub fn handler(ctx: Context<RemoveMetadataItem>) -> Result<()> {
     let metadata = &mut ctx.accounts.metadata;
     let root_collection_metadata_key = &ctx.accounts.root_collection_metadata_key;
     let collection_metadata_key = &ctx.accounts.collection_metadata_key;
     let item_metadata_key = &ctx.accounts.item_metadata_key;
     let update_authority = &ctx.accounts.update_authority;
 
-    // Check if metadata item is to be appended in root collection
+    // Check if metadata item is to be removed in root collection
     if check_collection_root_collection_equality(
         root_collection_metadata_key,
         collection_metadata_key,
@@ -70,19 +70,8 @@ pub fn handler(ctx: Context<AppendMetadataItem>, args: AppendMetadataItemArgs) -
             .items
             .binary_search_by_key(&item_metadata_key.id, |item| item.metadata_key_id)
         {
-            Ok(_) => return err!(MythicMetadataError::MetadataItemAlreadyExists),
-            Err(item_index) => {
-                let slot = Clock::get()?.slot;
-                metadata.collection.update_slot = slot;
-                metadata.collection.items.insert(
-                    item_index,
-                    MetadataItem {
-                        metadata_key_id: item_metadata_key.id,
-                        update_slot: slot,
-                        value: args.value,
-                    },
-                );
-            }
+            Ok(item_index) => metadata.collection.items.remove(item_index),
+            Err(_) => return err!(MythicMetadataError::MetadataItemNonExistent),
         };
     } else {
         let (collection_index, mut collection) = verify_collection_update_authority(
@@ -95,24 +84,15 @@ pub fn handler(ctx: Context<AppendMetadataItem>, args: AppendMetadataItemArgs) -
             .items
             .binary_search_by_key(&item_metadata_key.id, |item| item.metadata_key_id)
         {
-            Ok(_) => return err!(MythicMetadataError::MetadataItemAlreadyExists),
-            Err(item_index) => {
-                let slot = Clock::get()?.slot;
-                collection.update_slot = slot;
-                collection.items.insert(
-                    item_index,
-                    MetadataItem {
-                        metadata_key_id: item_metadata_key.id,
-                        update_slot: slot,
-                        value: args.value,
-                    },
-                );
+            Ok(item_index) => {
+                collection.items.remove(item_index);
                 metadata.collection.collections.remove(collection_index);
                 metadata
                     .collection
                     .collections
                     .insert(collection_index, collection);
             }
+            Err(_) => return err!(MythicMetadataError::MetadataItemNonExistent),
         };
     }
 
@@ -120,6 +100,6 @@ pub fn handler(ctx: Context<AppendMetadataItem>, args: AppendMetadataItemArgs) -
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct AppendMetadataItemArgs {
+pub struct RemoveMetadataItemArgs {
     pub value: Vec<u8>,
 }

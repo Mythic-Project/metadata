@@ -7,9 +7,6 @@ use crate::errors::*;
 #[derive(InitSpace)]
 /// MetadataKey account defines a single metadata value
 pub struct MetadataKey {
-    /// Bump
-    pub bump: u8,
-
     /// Id
     pub id: u64,
 
@@ -33,6 +30,9 @@ pub struct MetadataKey {
     /// e.g. string, number, image, metadata, metadata-collection etc.
     #[max_len(MAX_CONTENT_TYPE_LEN)]
     pub content_type: String,
+
+    /// Bump
+    pub bump: u8,
 }
 
 impl MetadataKey {

@@ -33,6 +33,10 @@ pub mod mythic_metadata {
         append::collection::handler(ctx, args)
     }
 
+    pub fn remove_metadata_collection(ctx: Context<RemoveMetadataCollection>) -> Result<()> {
+        remove::collection::handler(ctx)
+    }
+
     pub fn set_collection_update_authority(
         ctx: Context<SetCollectionUpdateAuthority>,
         args: SetCollectionUpdateAuthorityArgs,
@@ -51,6 +55,17 @@ pub mod mythic_metadata {
         args: AppendMetadataItemArgs,
     ) -> Result<()> {
         append::item::handler(ctx, args)
+    }
+
+    pub fn update_metadata_item(
+        ctx: Context<UpdateMetadataItem>,
+        args: UpdateMetadataItemArgs,
+    ) -> Result<()> {
+        update::item::handler(ctx, args)
+    }
+
+    pub fn remove_metadata_item(ctx: Context<RemoveMetadataItem>) -> Result<()> {
+        remove::item::handler(ctx)
     }
 }
 

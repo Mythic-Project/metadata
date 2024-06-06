@@ -22,4 +22,8 @@ pub enum MythicMetadataError {
     MetadataItemFull,
     #[msg("Metadata item already exists")]
     MetadataItemAlreadyExists,
+    #[msg("Metadata item does not exist")]
+    MetadataItemNonExistent,
+    #[msg("Metadata item value len exceeded")]
+    MetadataItemValueLenExceeded,
 }
