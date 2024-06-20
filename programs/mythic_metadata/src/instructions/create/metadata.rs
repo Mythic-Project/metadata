@@ -1,3 +1,5 @@
+use std::vec;
+
 use anchor_lang::prelude::*;
 
 use crate::constants::*;
@@ -13,11 +15,17 @@ pub struct CreateMetadata<'info> {
     #[account(
         init,
         payer = payer,
-        space = Metadata::size(),
+        space = Metadata::size(&MetadataRootCollection {
+            collections: vec![],
+            items: vec![],
+            metadata_key_id: root_collection_metadata_key.id,
+            update_slot: Clock::get()?.slot,
+            update_authority: args.update_authority
+        }),
         seeds = [
             PREFIX,
             METADATA,
-            metadata_key.key().as_ref(),
+            root_collection_metadata_key.key().as_ref(),
             issuing_authority.key().as_ref(),
             args.subject.as_ref()
         ],
@@ -28,11 +36,11 @@ pub struct CreateMetadata<'info> {
         seeds = [
             PREFIX,
             METADATA_KEY,
-            &metadata_key.id.to_le_bytes()
+            &root_collection_metadata_key.id.to_le_bytes()
         ],
         bump,
     )]
-    pub metadata_key: Account<'info, MetadataKey>,
+    pub root_collection_metadata_key: Account<'info, MetadataKey>,
     pub system_program: Program<'info, System>,
 }
 
@@ -45,11 +53,15 @@ pub fn handler(ctx: Context<CreateMetadata>, args: CreateMetadataArgs) -> Result
     let metadata = &mut ctx.accounts.metadata;
     metadata.set_inner(Metadata {
         bump: ctx.bumps.metadata,
-        metadata_key_id: ctx.accounts.metadata_key.id,
-        update_authority,
+        collection: MetadataRootCollection {
+            collections: vec![],
+            items: vec![],
+            metadata_key_id: ctx.accounts.root_collection_metadata_key.id,
+            update_authority,
+            update_slot: Clock::get()?.slot,
+        },
         issuing_authority: ctx.accounts.issuing_authority.key(),
         subject,
-        collections: vec![],
     });
 
     Ok(())
