@@ -13,7 +13,12 @@ pub struct CreateMetadataKey<'info> {
     #[account(
         init,
         payer = payer,
-        space = MetadataKey::size(),
+        space = MetadataKey::size(
+            &args.name,
+            &args.label,
+            &args.description,
+            &args.content_type
+        ),
         seeds = [
             PREFIX,
             METADATA_KEY,
