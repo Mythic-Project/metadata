@@ -4,7 +4,6 @@ use crate::constants::*;
 use crate::errors::*;
 
 #[account]
-#[derive(InitSpace)]
 /// MetadataKey account defines a single metadata value
 pub struct MetadataKey {
     /// Id
@@ -15,20 +14,16 @@ pub struct MetadataKey {
     pub namespace_authority: Pubkey,
 
     /// Name of the metadata value represented by the MetadataKey
-    #[max_len(MAX_NAME_LEN)]
     pub name: String,
 
     /// User friendly label of the value represented by the MetadataKey
-    #[max_len(MAX_LABEL_LEN)]
     pub label: String,
 
     /// Description of the value represented by the MetadataKey
-    #[max_len(MAX_DESCRIPTION_LEN)]
     pub description: String,
 
     /// The type of the metadata described by the key
     /// e.g. string, number, image, metadata, metadata-collection etc.
-    #[max_len(MAX_CONTENT_TYPE_LEN)]
     pub content_type: String,
 
     /// Bump
@@ -36,8 +31,15 @@ pub struct MetadataKey {
 }
 
 impl MetadataKey {
-    pub fn size() -> usize {
-        8 + MetadataKey::INIT_SPACE
+    pub fn size(name: &str, label: &str, description: &str, content_type: &str) -> usize {
+        8 + // Anchor discriminator
+        8 + // ID
+        32 + // Namespace Authority
+        4 + name.len() + // Name
+        4 + label.len() + // Label
+        4 + description.len() + // Description
+        4 + content_type.len() + // Content Type
+        1 // bump
     }
 
     pub fn validate(name: &str, label: &str, description: &str, content_type: &str) -> Result<()> {

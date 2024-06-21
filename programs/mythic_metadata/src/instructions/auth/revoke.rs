@@ -28,7 +28,7 @@ pub struct RevokeCollectionUpdateAuthority<'info> {
             METADATA_KEY,
             &root_collection_metadata_key.id.to_le_bytes()
         ],
-        bump,
+        bump = root_collection_metadata_key.bump,
     )]
     pub root_collection_metadata_key: Account<'info, MetadataKey>,
     #[account(
@@ -37,7 +37,7 @@ pub struct RevokeCollectionUpdateAuthority<'info> {
             METADATA_KEY,
             &collection_metadata_key.id.to_le_bytes()
         ],
-        bump,
+        bump = collection_metadata_key.bump,
     )]
     pub collection_metadata_key: Account<'info, MetadataKey>,
 }
