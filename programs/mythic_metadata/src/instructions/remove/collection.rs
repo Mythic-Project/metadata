@@ -11,11 +11,11 @@ pub struct RemoveMetadataCollection<'info> {
     pub update_authority: Signer<'info>,
     #[account(
         mut,
-        constraint = metadata.collection.metadata_key_id.eq(&root_collection_metadata_key.id) @ MythicMetadataError::InvalidMetadataKey,
+        constraint = metadata.metadata_key_id.eq(&metadata_metadata_key.id) @ MythicMetadataError::InvalidMetadataKey,
         seeds = [
             PREFIX,
             METADATA,
-            root_collection_metadata_key.key().as_ref(),
+            metadata_metadata_key.key().as_ref(),
             metadata.issuing_authority.as_ref(),
             metadata.subject.as_ref()
         ],
@@ -26,11 +26,11 @@ pub struct RemoveMetadataCollection<'info> {
         seeds = [
             PREFIX,
             METADATA_KEY,
-            &root_collection_metadata_key.id.to_le_bytes()
+            &metadata_metadata_key.id.to_le_bytes()
         ],
-        bump = root_collection_metadata_key.bump,
+        bump = metadata_metadata_key.bump,
     )]
-    pub root_collection_metadata_key: Account<'info, MetadataKey>,
+    pub metadata_metadata_key: Account<'info, MetadataKey>,
     #[account(
         seeds = [
             PREFIX,
@@ -48,7 +48,7 @@ pub fn handler(ctx: Context<RemoveMetadataCollection>) -> Result<()> {
 
     // Verify metadata root collection update authority
     require!(
-        verify_root_collection_update_authority(&metadata.collection, update_authority)?,
+        verify_metadata_update_authority(&metadata, update_authority)?,
         MythicMetadataError::Unauthorized
     );
 
@@ -56,12 +56,11 @@ pub fn handler(ctx: Context<RemoveMetadataCollection>) -> Result<()> {
     let collection_metadata_key = &ctx.accounts.collection_metadata_key;
 
     match metadata
-        .collection
         .collections
         .binary_search_by_key(&collection_metadata_key.id, |collection| {
             collection.metadata_key_id
         }) {
-        Ok(collection_index) => metadata.collection.collections.remove(collection_index),
+        Ok(collection_index) => metadata.collections.remove(collection_index),
         Err(_) => return err!(MythicMetadataError::MetadataCollectionNonExistent),
     };
 
