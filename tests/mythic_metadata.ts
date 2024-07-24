@@ -76,7 +76,7 @@ describe("metadata", () => {
   const metadataRootCollectionAuthKeypair = new Keypair();
   const metadataCollectionUpdateAuthKeypair = new Keypair();
 
-  let metadataRootCollectionMetadataKey: PublicKey;
+  let metadataMetadataKey: PublicKey;
   let metadataCollectionMetadataKey: PublicKey;
   let metadataItemMetadataKey: PublicKey;
 
@@ -115,10 +115,10 @@ describe("metadata", () => {
         programId
       );
 
-      metadataRootCollectionMetadataKey = metadataKeyBatch[0];
+      metadataMetadataKey = metadataKeyBatch[0];
       const bump = metadataKeyBatch[1];
 
-      let metadataRootCollectionMetadataKeyData;
+      let metadataMetadataKeyData;
       before(async () => {
         await mythicMetadataProgram.methods
           .createMetadataKey({
@@ -129,7 +129,7 @@ describe("metadata", () => {
             id: new anchor.BN(metadataRootCollectionMetadataId),
           })
           .accountsStrict({
-            metadataKey: metadataRootCollectionMetadataKey,
+            metadataKey: metadataMetadataKey,
             namespaceAuthority: metadataKeyAuthKeypair.publicKey,
             payer: wallet.publicKey,
             systemProgram: SystemProgram.programId,
@@ -140,44 +140,40 @@ describe("metadata", () => {
           .signers([metadataKeyAuthKeypair])
           .rpc(confirmOptions);
 
-        metadataRootCollectionMetadataKeyData =
+        metadataMetadataKeyData =
           await mythicMetadataProgram.account.metadataKey.fetch(
-            metadataRootCollectionMetadataKey
+            metadataMetadataKey
           );
       });
 
       it("should have right bump", () => {
-        expect(metadataRootCollectionMetadataKeyData.bump).to.eql(bump);
+        expect(metadataMetadataKeyData.bump).to.eql(bump);
       });
 
       it("should have right namespaceAuthority", () => {
-        expect(
-          metadataRootCollectionMetadataKeyData.namespaceAuthority.toString()
-        ).to.eql(metadataKeyAuthKeypair.publicKey.toString());
+        expect(metadataMetadataKeyData.namespaceAuthority.toString()).to.eql(
+          metadataKeyAuthKeypair.publicKey.toString()
+        );
       });
 
       it("should have right name", () => {
-        expect(metadataRootCollectionMetadataKeyData.name).to.eql(name);
+        expect(metadataMetadataKeyData.name).to.eql(name);
       });
 
       it("should have right label", () => {
-        expect(metadataRootCollectionMetadataKeyData.label).to.eql(label);
+        expect(metadataMetadataKeyData.label).to.eql(label);
       });
 
       it("should have right description", () => {
-        expect(metadataRootCollectionMetadataKeyData.description).to.eql(
-          description
-        );
+        expect(metadataMetadataKeyData.description).to.eql(description);
       });
 
       it("should have right contentType", () => {
-        expect(metadataRootCollectionMetadataKeyData.contentType).to.eql(
-          contentType
-        );
+        expect(metadataMetadataKeyData.contentType).to.eql(contentType);
       });
 
       it("should have right id", () => {
-        expect(metadataRootCollectionMetadataKeyData.id.toString()).to.eql(
+        expect(metadataMetadataKeyData.id.toString()).to.eql(
           metadataRootCollectionMetadataId.toString()
         );
       });
@@ -185,7 +181,7 @@ describe("metadata", () => {
 
     describe("after creating metadata", () => {
       const metadataBatch = getMetadata(
-        metadataRootCollectionMetadataKey,
+        metadataMetadataKey,
         metadataRootCollectionAuthKeypair.publicKey,
         demoSubject,
         programId
@@ -204,7 +200,7 @@ describe("metadata", () => {
           .accountsStrict({
             issuingAuthority: metadataRootCollectionAuthKeypair.publicKey,
             metadata: metadataKey,
-            rootCollectionMetadataKey: metadataRootCollectionMetadataKey,
+            metadataMetadataKey: metadataMetadataKey,
             payer: wallet.publicKey,
             systemProgram: SystemProgram.programId,
           })
@@ -227,7 +223,7 @@ describe("metadata", () => {
       });
 
       it("should have right updateAuthority", () => {
-        expect(metadataData.collection.updateAuthority.toString()).to.eql(
+        expect(metadataData.updateAuthority.toString()).to.eql(
           metadataRootCollectionAuthKeypair.publicKey.toString()
         );
       });
@@ -329,7 +325,7 @@ describe("metadata", () => {
           .accountsStrict({
             collectionMetadataKey: metadataCollectionMetadataKey,
             metadata: metadataKey,
-            rootCollectionMetadataKey: metadataRootCollectionMetadataKey,
+            metadataMetadataKey: metadataMetadataKey,
             payer: metadataRootCollectionAuthKeypair.publicKey,
             updateAuthority: metadataRootCollectionAuthKeypair.publicKey,
             systemProgram: SystemProgram.programId,
@@ -340,11 +336,11 @@ describe("metadata", () => {
         metadataData = await mythicMetadataProgram.account.metadata.fetch(
           metadataKey
         );
-        collection = metadataData.collection.collections[0];
+        collection = metadataData.collections[0];
       });
 
       it("should have 1 collection in metadata", () => {
-        expect(metadataData.collection.collections.length).to.eql(1);
+        expect(metadataData.collections.length).to.eql(1);
       });
 
       it("should have right metadata key id", () => {
@@ -368,7 +364,7 @@ describe("metadata", () => {
           .accountsStrict({
             collectionMetadataKey: metadataCollectionMetadataKey,
             metadata: metadataKey,
-            rootCollectionMetadataKey: metadataRootCollectionMetadataKey,
+            metadataMetadataKey: metadataMetadataKey,
             updateAuthority: metadataRootCollectionAuthKeypair.publicKey,
           })
           .signers([metadataRootCollectionAuthKeypair])
@@ -380,7 +376,7 @@ describe("metadata", () => {
       });
 
       it("should have updated collection update authority", () => {
-        const collection = metadataData.collection.collections[0];
+        const collection = metadataData.collections[0];
         expect(collection.updateAuthority.toString()).to.eql(
           metadataCollectionUpdateAuthKeypair.publicKey.toString()
         );
@@ -480,8 +476,9 @@ describe("metadata", () => {
             collectionMetadataKey: metadataCollectionMetadataKey,
             itemMetadataKey: metadataItemMetadataKey,
             metadata: metadataKey,
-            rootCollectionMetadataKey: metadataRootCollectionMetadataKey,
+            metadataMetadataKey: metadataMetadataKey,
             updateAuthority: metadataCollectionUpdateAuthKeypair.publicKey,
+            systemProgram: SystemProgram.programId,
           })
           .signers([metadataCollectionUpdateAuthKeypair])
           .rpc(confirmOptions);
@@ -489,7 +486,7 @@ describe("metadata", () => {
         metadataData = await mythicMetadataProgram.account.metadata.fetch(
           metadataKey
         );
-        collection = metadataData.collection.collections[0];
+        collection = metadataData.collections[0];
         item = collection.items[0];
       });
 
@@ -524,8 +521,9 @@ describe("metadata", () => {
             collectionMetadataKey: metadataCollectionMetadataKey,
             itemMetadataKey: metadataItemMetadataKey,
             metadata: metadataKey,
-            rootCollectionMetadataKey: metadataRootCollectionMetadataKey,
+            metadataMetadataKey: metadataMetadataKey,
             updateAuthority: metadataCollectionUpdateAuthKeypair.publicKey,
+            systemProgram: SystemProgram.programId,
           })
           .signers([metadataCollectionUpdateAuthKeypair])
           .rpc(confirmOptions);
@@ -533,7 +531,7 @@ describe("metadata", () => {
         metadataData = await mythicMetadataProgram.account.metadata.fetch(
           metadataKey
         );
-        collection = metadataData.collection.collections[0];
+        collection = metadataData.collections[0];
         item = collection.items[0];
       });
 
@@ -551,7 +549,7 @@ describe("metadata", () => {
             collectionMetadataKey: metadataCollectionMetadataKey,
             metadata: metadataKey,
             itemMetadataKey: metadataItemMetadataKey,
-            rootCollectionMetadataKey: metadataRootCollectionMetadataKey,
+            metadataMetadataKey: metadataMetadataKey,
             updateAuthority: metadataCollectionUpdateAuthKeypair.publicKey,
           })
           .signers([metadataCollectionUpdateAuthKeypair])
@@ -563,7 +561,7 @@ describe("metadata", () => {
       });
 
       it("should have removed from collection", () => {
-        const collection = metadataData.collection.collections[0];
+        const collection = metadataData.collections[0];
         expect(collection.items.length).to.eql(0);
       });
     });
@@ -576,7 +574,7 @@ describe("metadata", () => {
           .accountsStrict({
             collectionMetadataKey: metadataCollectionMetadataKey,
             metadata: metadataKey,
-            rootCollectionMetadataKey: metadataRootCollectionMetadataKey,
+            metadataMetadataKey: metadataMetadataKey,
             updateAuthority: metadataCollectionUpdateAuthKeypair.publicKey,
           })
           .signers([metadataCollectionUpdateAuthKeypair])
@@ -588,7 +586,7 @@ describe("metadata", () => {
       });
 
       it("should have nullified collection update authority", () => {
-        const collection = metadataData.collection.collections[0];
+        const collection = metadataData.collections[0];
         expect(collection.updateAuthority).to.be.null;
       });
     });
@@ -601,7 +599,7 @@ describe("metadata", () => {
           .accountsStrict({
             collectionMetadataKey: metadataCollectionMetadataKey,
             metadata: metadataKey,
-            rootCollectionMetadataKey: metadataRootCollectionMetadataKey,
+            metadataMetadataKey: metadataMetadataKey,
             updateAuthority: metadataRootCollectionAuthKeypair.publicKey,
           })
           .signers([metadataRootCollectionAuthKeypair])
@@ -613,7 +611,7 @@ describe("metadata", () => {
       });
 
       it("should have removed from root collection", () => {
-        expect(metadataData.collection.collections.length).to.eql(0);
+        expect(metadataData.collections.length).to.eql(0);
       });
     });
   });

@@ -6,12 +6,12 @@ use anchor_lang::{
 use crate::errors::*;
 use crate::state::*;
 
-pub fn check_collection_root_collection_equality(
-    root_collection_metadata_key: &Account<MetadataKey>,
+pub fn check_collection_metadata_equality(
+    metadata_collection_metadata_key: &Account<MetadataKey>,
     collection_metadata_key: &Account<MetadataKey>,
 ) -> bool {
-    root_collection_metadata_key.key() == collection_metadata_key.key()
-        && root_collection_metadata_key.id == collection_metadata_key.id
+    metadata_collection_metadata_key.key() == collection_metadata_key.key()
+        && metadata_collection_metadata_key.id == collection_metadata_key.id
 }
 
 pub fn verify_metadata_update_authority(

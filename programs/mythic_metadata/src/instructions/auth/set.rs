@@ -52,7 +52,7 @@ pub fn handler(
     let update_authority = &ctx.accounts.update_authority;
 
     // Check if root collection and collection is same to update root_collection.update_authority
-    if check_collection_root_collection_equality(metadata_metadata_key, collection_metadata_key) {
+    if check_collection_metadata_equality(metadata_metadata_key, collection_metadata_key) {
         verify_metadata_update_authority(&metadata, update_authority.key)?;
         metadata.update_authority = Some(args.new_update_authority);
     } else {

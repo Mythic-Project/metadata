@@ -59,7 +59,7 @@ pub fn handler(ctx: Context<RemoveMetadataItem>) -> Result<()> {
     let update_authority = &ctx.accounts.update_authority;
 
     // Check if metadata item is to be removed in root collection
-    if check_collection_root_collection_equality(metadata_metadata_key, collection_metadata_key) {
+    if check_collection_metadata_equality(metadata_metadata_key, collection_metadata_key) {
         verify_metadata_update_authority(&metadata, &update_authority.key())?;
 
         match metadata

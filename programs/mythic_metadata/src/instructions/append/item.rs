@@ -7,7 +7,7 @@ use crate::utils::*;
 
 #[derive(Accounts)]
 pub struct AppendMetadataItem<'info> {
-    #[account()]
+    #[account(mut)]
     pub update_authority: Signer<'info>,
     #[account(
         mut,
@@ -49,6 +49,7 @@ pub struct AppendMetadataItem<'info> {
         bump = item_metadata_key.bump,
     )]
     pub item_metadata_key: Account<'info, MetadataKey>,
+    pub system_program: Program<'info, System>,
 }
 
 pub fn handler(ctx: Context<AppendMetadataItem>, args: AppendMetadataItemArgs) -> Result<()> {
@@ -58,8 +59,8 @@ pub fn handler(ctx: Context<AppendMetadataItem>, args: AppendMetadataItemArgs) -
     let item_metadata_key = &ctx.accounts.item_metadata_key;
     let update_authority = &ctx.accounts.update_authority;
 
-    // Check if metadata item is to be appended in root collection
-    if check_collection_root_collection_equality(metadata_metadata_key, collection_metadata_key) {
+    // Check if metadata item is to be appended in main metadata
+    if check_collection_metadata_equality(metadata_metadata_key, collection_metadata_key) {
         verify_metadata_update_authority(&metadata, &update_authority.key())?;
 
         match metadata
@@ -108,6 +109,16 @@ pub fn handler(ctx: Context<AppendMetadataItem>, args: AppendMetadataItemArgs) -
             }
         };
     }
+
+    let metadata_new_size = Metadata::size(&metadata.items, &metadata.collections);
+    realloc_account(
+        metadata.to_account_info(),
+        metadata_new_size,
+        ctx.accounts.update_authority.to_account_info(),
+        ctx.accounts.system_program.to_account_info(),
+    )?;
+
+    metadata.validate()?;
 
     Ok(())
 }
