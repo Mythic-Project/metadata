@@ -6,23 +6,23 @@ use anchor_lang::{
 use crate::errors::*;
 use crate::state::*;
 
-pub fn check_collection_root_collection_equality(
-    root_collection_metadata_key: &Account<MetadataKey>,
+pub fn check_collection_metadata_equality(
+    metadata_collection_metadata_key: &Account<MetadataKey>,
     collection_metadata_key: &Account<MetadataKey>,
 ) -> bool {
-    root_collection_metadata_key.key() == collection_metadata_key.key()
-        && root_collection_metadata_key.id == collection_metadata_key.id
+    metadata_collection_metadata_key.key() == collection_metadata_key.key()
+        && metadata_collection_metadata_key.id == collection_metadata_key.id
 }
 
-pub fn verify_root_collection_update_authority(
-    root_collection: &MetadataRootCollection,
+pub fn verify_metadata_update_authority(
+    metadata: &Metadata,
     update_authority: &Pubkey,
 ) -> Result<bool> {
-    if root_collection.update_authority.is_none() {
+    if metadata.update_authority.is_none() {
         return err!(MythicMetadataError::ImmutableMetadata);
     }
 
-    if let Some(expected_update_authority) = root_collection.update_authority {
+    if let Some(expected_update_authority) = metadata.update_authority {
         if expected_update_authority.ne(&update_authority) {
             return Ok(false);
         }
@@ -31,21 +31,21 @@ pub fn verify_root_collection_update_authority(
 }
 
 pub fn verify_collection_update_authority(
-    root_collection: &MetadataRootCollection,
+    metadata: &Metadata,
     collection_metadata_key_id: u64,
     update_authority: &Pubkey,
 ) -> Result<(usize, MetadataCollection)> {
-    match root_collection
+    match metadata
         .collections
         .binary_search_by_key(&collection_metadata_key_id, |collection| {
             collection.metadata_key_id
         }) {
         Ok(collection_index) => {
-            let collection = root_collection.collections.get(collection_index).unwrap();
+            let collection = metadata.collections.get(collection_index).unwrap();
 
             if collection.update_authority.is_none() {
                 require!(
-                    verify_root_collection_update_authority(root_collection, update_authority)?,
+                    verify_metadata_update_authority(metadata, update_authority)?,
                     MythicMetadataError::Unauthorized
                 );
                 return Ok((collection_index, collection.clone()));
@@ -53,7 +53,7 @@ pub fn verify_collection_update_authority(
                 let collection_update_authority = collection.update_authority.unwrap();
                 if collection_update_authority.ne(&update_authority) {
                     require!(
-                        verify_root_collection_update_authority(root_collection, update_authority)?,
+                        verify_metadata_update_authority(metadata, update_authority)?,
                         MythicMetadataError::Unauthorized
                     );
                 }

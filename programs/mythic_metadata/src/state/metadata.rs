@@ -76,10 +76,25 @@ impl MetadataCollection {
     }
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct MetadataRootCollection {
+#[account]
+pub struct Metadata {
+    /// The subject described by the metadata (e.g. a DAO, NFT, a program etc.)
+    pub subject: Pubkey,
+
     /// The Metadata Key  Id
     pub metadata_key_id: u64,
+
+    /// The authority which issued (created) the Metadata account and owns it
+    /// Note: The authority is embedded in the PDA seeds and cannot be changed
+    /// If a new authority is required then a new Metadata account must be created
+    ///
+    /// Metadata can be self issued by the subject or issued by a third party
+    /// For example a DAO can issue metadata about itself using the DAO's authority
+    /// Or external authority can issue claims, certifications etc. about the DAO
+    ///
+    /// TODO:
+    /// - Should it also be allowed to close the account?
+    pub issuing_authority: Pubkey,
 
     /// The slot when the collection was last updated
     /// The collection update slot is max(update_slot) for all its metadata items
@@ -93,21 +108,18 @@ pub struct MetadataRootCollection {
     pub items: Vec<MetadataItem>,
 
     pub collections: Vec<MetadataCollection>,
+
+    /// Bump
+    pub bump: u8,
 }
 
-impl MetadataRootCollection {
-    pub fn size(
-        root_collection_items: &[MetadataItem],
-        collections: &[MetadataCollection],
-    ) -> usize {
-        let root_collection_items_size =
-            root_collection_items
-                .iter()
-                .fold(0, |mut acc, collection_item| {
-                    let metadata_item_size = MetadataItem::size(&collection_item.value);
-                    acc += metadata_item_size;
-                    acc
-                });
+impl Metadata {
+    pub fn size(items: &[MetadataItem], collections: &[MetadataCollection]) -> usize {
+        let items_size = items.iter().fold(0, |mut acc, collection_item| {
+            let metadata_item_size = MetadataItem::size(&collection_item.value);
+            acc += metadata_item_size;
+            acc
+        });
 
         let collections_size = collections.iter().fold(0, |mut acc, child_collection| {
             let child_collection_size = MetadataCollection::size(&child_collection.items);
@@ -115,11 +127,15 @@ impl MetadataRootCollection {
             acc
         });
 
+        8 + // Anchor discriminator
+        32 + // subject
         8 + // metadata_key_id
+        32 + // issuing_authority
         8 + // update_slot
         1 + 32 + // update_authority
-        4 + root_collection_items_size + // items
-        4 + collections_size // children
+        4 + items_size + // items
+        4 + collections_size + // root_collection
+        1 // bump
     }
 
     pub fn validate(&self) -> Result<()> {
@@ -139,49 +155,6 @@ impl MetadataRootCollection {
             collection.validate()?;
         }
 
-        Ok(())
-    }
-}
-
-#[account]
-pub struct Metadata {
-    /// The subject described by the metadata (e.g. a DAO, NFT, a program etc.)
-    pub subject: Pubkey,
-
-    /// The authority which issued (created) the Metadata account and owns it
-    /// Note: The authority is embedded in the PDA seeds and cannot be changed
-    /// If a new authority is required then a new Metadata account must be created
-    ///
-    /// Metadata can be self issued by the subject or issued by a third party
-    /// For example a DAO can issue metadata about itself using the DAO's authority
-    /// Or external authority can issue claims, certifications etc. about the DAO
-    ///
-    /// TODO:
-    /// - Should it also be allowed to close the account?
-    pub issuing_authority: Pubkey,
-
-    /// A set of metadata collections
-    pub collection: MetadataRootCollection,
-
-    /// Bump
-    pub bump: u8,
-}
-
-impl Metadata {
-    pub fn size(root_collection: &MetadataRootCollection) -> usize {
-        let root_collection_size =
-            MetadataRootCollection::size(&root_collection.items, &root_collection.collections);
-
-        8 + // Anchor discriminator
-        32 + // subject
-        32 + // issuing_authority
-        1 + 32 + // update_authority
-        root_collection_size + // root_collection
-        1 // bump
-    }
-
-    pub fn validate(&self) -> Result<()> {
-        self.collection.validate()?;
         Ok(())
     }
 }
