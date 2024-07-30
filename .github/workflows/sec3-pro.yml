@@ -16,4 +16,4 @@ jobs:
         uses: sec3dev/pro-action@v1
         with:
           sec3-token: ${{ secrets.SEC3_TOKEN }}
-          path: programs/your_program
+          path: programs/mythic_metadata
