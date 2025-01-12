@@ -10,7 +10,6 @@ use crate::state::*;
 pub struct CreateMetadata<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
-    #[account()]
     pub issuing_authority: Signer<'info>,
     #[account(
         init,

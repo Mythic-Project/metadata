@@ -8,7 +8,6 @@ use crate::state::*;
 pub struct CreateMetadataKey<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
-    #[account()]
     pub namespace_authority: Signer<'info>,
     #[account(
         init,

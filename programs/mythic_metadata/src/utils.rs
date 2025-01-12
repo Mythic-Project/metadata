@@ -84,8 +84,8 @@ pub fn realloc_account<'a>(
     let current_lamports = account.lamports();
     let rent_exempt_lamports = Rent::get()?.minimum_balance(new_account_size);
 
-    let lmaports_diff = rent_exempt_lamports.saturating_sub(current_lamports);
-    if lmaports_diff.gt(&0) {
+    let lamports_diff = rent_exempt_lamports.saturating_sub(current_lamports);
+    if lamports_diff.gt(&0) {
         transfer(
             CpiContext::new(
                 system_program,
@@ -94,7 +94,7 @@ pub fn realloc_account<'a>(
                     to: account.clone(),
                 },
             ),
-            lmaports_diff,
+            lamports_diff,
         )?;
     }
 

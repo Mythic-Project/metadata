@@ -3,12 +3,10 @@ use anchor_lang::prelude::*;
 use crate::constants::*;
 use crate::errors::*;
 use crate::state::*;
-use crate::utils::*;
 
 #[derive(Accounts)]
 pub struct RemoveMetadataCollection<'info> {
-    #[account()]
-    pub update_authority: Signer<'info>,
+    pub issuing_authority: Signer<'info>,
     #[account(
         mut,
         constraint = metadata.metadata_key_id.eq(&metadata_metadata_key.id) @ MythicMetadataError::InvalidMetadataKey,
@@ -16,10 +14,11 @@ pub struct RemoveMetadataCollection<'info> {
             PREFIX,
             METADATA,
             metadata_metadata_key.key().as_ref(),
-            metadata.issuing_authority.as_ref(),
+            issuing_authority.key().as_ref(),
             metadata.subject.as_ref()
         ],
         bump = metadata.bump,
+        has_one = issuing_authority
     )]
     pub metadata: Account<'info, Metadata>,
     #[account(
@@ -43,15 +42,6 @@ pub struct RemoveMetadataCollection<'info> {
 }
 
 pub fn handler(ctx: Context<RemoveMetadataCollection>) -> Result<()> {
-    let metadata = &ctx.accounts.metadata;
-    let update_authority = ctx.accounts.update_authority.key;
-
-    // Verify metadata root collection update authority
-    require!(
-        verify_metadata_update_authority(&metadata, update_authority)?,
-        MythicMetadataError::Unauthorized
-    );
-
     let metadata = &mut ctx.accounts.metadata;
     let collection_metadata_key = &ctx.accounts.collection_metadata_key;
 

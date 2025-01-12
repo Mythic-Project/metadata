@@ -9,8 +9,7 @@ use crate::utils::*;
 pub struct AppendMetadataCollection<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
-    #[account()]
-    pub update_authority: Signer<'info>,
+    pub issuing_authority: Signer<'info>,
     #[account(
         mut,
         constraint = metadata.metadata_key_id.eq(&metadata_metadata_key.id) @ MythicMetadataError::InvalidMetadataKey,
@@ -18,10 +17,11 @@ pub struct AppendMetadataCollection<'info> {
             PREFIX,
             METADATA,
             metadata_metadata_key.key().as_ref(),
-            metadata.issuing_authority.as_ref(),
+            issuing_authority.key().as_ref(),
             metadata.subject.as_ref()
         ],
-        bump
+        bump,
+        has_one = issuing_authority,
     )]
     pub metadata: Account<'info, Metadata>,
     #[account(
@@ -49,15 +49,6 @@ pub fn handler(
     ctx: Context<AppendMetadataCollection>,
     args: AppendMetadataCollectionArgs,
 ) -> Result<()> {
-    let metadata = &ctx.accounts.metadata;
-    let update_authority = ctx.accounts.update_authority.key;
-
-    // Verify metadata root collection update authority
-    require!(
-        verify_metadata_update_authority(&metadata, update_authority)?,
-        MythicMetadataError::Unauthorized
-    );
-
     let metadata = &mut ctx.accounts.metadata;
     let collection_metadata_key = &ctx.accounts.collection_metadata_key;
 

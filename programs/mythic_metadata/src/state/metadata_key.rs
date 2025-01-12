@@ -3,6 +3,7 @@ use anchor_lang::prelude::*;
 use crate::constants::*;
 use crate::errors::*;
 
+#[derive(Debug)]
 #[account]
 /// MetadataKey account defines a single metadata value
 pub struct MetadataKey {

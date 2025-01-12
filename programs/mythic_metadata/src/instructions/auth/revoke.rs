@@ -7,8 +7,7 @@ use crate::utils::*;
 
 #[derive(Accounts)]
 pub struct RevokeCollectionUpdateAuthority<'info> {
-    #[account()]
-    pub update_authority: Signer<'info>,
+    pub issuing_authority: Signer<'info>,
     #[account(
         mut,
         constraint = metadata.metadata_key_id.eq(&metadata_metadata_key.id) @ MythicMetadataError::InvalidMetadataKey,
@@ -16,10 +15,11 @@ pub struct RevokeCollectionUpdateAuthority<'info> {
             PREFIX,
             METADATA,
             metadata_metadata_key.key().as_ref(),
-            metadata.issuing_authority.as_ref(),
+            issuing_authority.key().as_ref(),
             metadata.subject.as_ref()
         ],
-        bump
+        bump,
+        has_one = issuing_authority
     )]
     pub metadata: Account<'info, Metadata>,
     #[account(
@@ -46,22 +46,24 @@ pub fn handler(ctx: Context<RevokeCollectionUpdateAuthority>) -> Result<()> {
     let metadata = &mut ctx.accounts.metadata;
     let metadata_metadata_key = &ctx.accounts.metadata_metadata_key;
     let collection_metadata_key = &ctx.accounts.collection_metadata_key;
-    let update_authority = &ctx.accounts.update_authority;
 
     // Check if root collection and collection is same to update root_collection.update_authority
     if check_collection_metadata_equality(metadata_metadata_key, collection_metadata_key) {
-        verify_metadata_update_authority(&metadata, update_authority.key)?;
         metadata.update_authority = None;
     } else {
-        let (collection_index, mut collection) = verify_collection_update_authority(
-            &metadata,
-            collection_metadata_key.id,
-            &update_authority.key(),
-        )?;
-
-        collection.update_authority = None;
-        metadata.collections.remove(collection_index);
-        metadata.collections.insert(collection_index, collection);
+        match metadata
+            .collections
+            .binary_search_by_key(&collection_metadata_key.id, |collection| {
+                collection.metadata_key_id
+            }) {
+            Ok(collection_index) => {
+                let mut collection = metadata.collections.get_mut(collection_index).unwrap().clone();
+                collection.update_authority = None;
+                metadata.collections.remove(collection_index);
+                metadata.collections.insert(collection_index, collection);
+            }
+            Err(_) => return err!(MythicMetadataError::MetadataCollectionNonExistent)
+        }
     }
 
     metadata.validate()?;

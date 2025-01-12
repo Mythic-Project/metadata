@@ -57,6 +57,13 @@ pub mod mythic_metadata {
         append::item::handler(ctx, args)
     }
 
+    pub fn append_metadata_items(
+        ctx: Context<AppendMetadataItems>,
+        args: AppendMetadataItemsArgs,
+    ) -> Result<()> {
+        append::items::handler(ctx, args)
+    }
+
     pub fn update_metadata_item(
         ctx: Context<UpdateMetadataItem>,
         args: UpdateMetadataItemArgs,

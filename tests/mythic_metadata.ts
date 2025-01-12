@@ -71,6 +71,8 @@ describe("metadata", () => {
   const metadataRootCollectionMetadataId = 123;
   const metadataCollectionMetadataKeyId = 456;
   const metadataItemMetadataKeyId = 789;
+  const multipleMetadataItemMetadataKeyId1 = 10001;
+  const multipleMetadataItemMetadataKeyId2 = 10002;
 
   const metadataKeyAuthKeypair = new Keypair();
   const metadataRootCollectionAuthKeypair = new Keypair();
@@ -327,7 +329,7 @@ describe("metadata", () => {
             metadata: metadataKey,
             metadataMetadataKey: metadataMetadataKey,
             payer: metadataRootCollectionAuthKeypair.publicKey,
-            updateAuthority: metadataRootCollectionAuthKeypair.publicKey,
+            issuingAuthority: metadataRootCollectionAuthKeypair.publicKey,
             systemProgram: SystemProgram.programId,
           })
           .signers([metadataRootCollectionAuthKeypair])
@@ -365,7 +367,7 @@ describe("metadata", () => {
             collectionMetadataKey: metadataCollectionMetadataKey,
             metadata: metadataKey,
             metadataMetadataKey: metadataMetadataKey,
-            updateAuthority: metadataRootCollectionAuthKeypair.publicKey,
+            issuingAuthority: metadataRootCollectionAuthKeypair.publicKey,
           })
           .signers([metadataRootCollectionAuthKeypair])
           .rpc(confirmOptions);
@@ -477,10 +479,11 @@ describe("metadata", () => {
             itemMetadataKey: metadataItemMetadataKey,
             metadata: metadataKey,
             metadataMetadataKey: metadataMetadataKey,
-            updateAuthority: metadataCollectionUpdateAuthKeypair.publicKey,
+            issuingAuthority: metadataRootCollectionAuthKeypair.publicKey,
             systemProgram: SystemProgram.programId,
+            payer: wallet.publicKey
           })
-          .signers([metadataCollectionUpdateAuthKeypair])
+          .signers([metadataRootCollectionAuthKeypair])
           .rpc(confirmOptions);
 
         metadataData = await mythicMetadataProgram.account.metadata.fetch(
@@ -502,6 +505,107 @@ describe("metadata", () => {
 
       it("should have right value", () => {
         expect(item.value).to.not.be.null;
+      });
+    });
+
+    describe("after appending metadata items to metadata collection", () => {
+      const favoriteColor = "red";
+      const favoriteCar = "bmw";
+      let metadataData;
+      let collection;
+      let item;
+
+      before(async () => {
+        const metadataItemKeyBatch1 = getMetadataKey(
+          multipleMetadataItemMetadataKeyId1,
+          programId
+        );
+
+        const metadataItemKeyBatch2 = getMetadataKey(
+          multipleMetadataItemMetadataKeyId2,
+          programId
+        );
+  
+        const metadataItemMetadataKey1 = metadataItemKeyBatch1[0];
+        const metadataItemMetadataKey2 = metadataItemKeyBatch2[0];
+
+        const args1  = {
+          contentType: "string",
+          description: "Favorite Color for DAO",
+          label: "Deans List Favorite Color",
+          name: "favorite-color",
+          id: new anchor.BN(multipleMetadataItemMetadataKeyId1)
+        };
+        
+        const args2  = {
+          contentType: "string",
+          description: "Favorite Car for DAO",
+          label: "Deans List Favorite Car",
+          name: "favorite-car",
+          id: new anchor.BN(multipleMetadataItemMetadataKeyId2)
+        };
+        
+        // Create First Key
+        await mythicMetadataProgram.methods
+          .createMetadataKey(args1)
+          .accountsStrict({
+            metadataKey: metadataItemMetadataKey1,
+            namespaceAuthority: metadataKeyAuthKeypair.publicKey,
+            payer: wallet.publicKey,
+            systemProgram: SystemProgram.programId,
+          })
+          .preInstructions([
+            ComputeBudgetProgram.setComputeUnitLimit({ units: 25000 }),
+          ])
+          .signers([metadataKeyAuthKeypair])
+          .rpc(confirmOptions);
+
+        // Create Second Key
+        await mythicMetadataProgram.methods
+          .createMetadataKey(args2)
+          .accountsStrict({
+            metadataKey: metadataItemMetadataKey2,
+            namespaceAuthority: metadataKeyAuthKeypair.publicKey,
+            payer: wallet.publicKey,
+            systemProgram: SystemProgram.programId,
+          })
+          .preInstructions([
+            ComputeBudgetProgram.setComputeUnitLimit({ units: 250000 }),
+          ])
+          .signers([metadataKeyAuthKeypair])
+          .rpc(confirmOptions);
+
+        try {
+          await mythicMetadataProgram.methods
+          .appendMetadataItems({
+            value: [Buffer.from(favoriteColor), Buffer.from(favoriteCar)],
+          })
+          .accountsStrict({
+            collectionMetadataKey: metadataMetadataKey,
+            metadata: metadataKey,
+            metadataMetadataKey: metadataMetadataKey,
+            issuingAuthority: metadataRootCollectionAuthKeypair.publicKey,
+            systemProgram: SystemProgram.programId,
+            payer: wallet.publicKey
+          })
+          .remainingAccounts([
+            {pubkey: metadataItemMetadataKey1, isSigner: false, isWritable: false},
+            {pubkey: metadataItemMetadataKey2, isSigner: false, isWritable: false}
+          ])
+          .signers([metadataRootCollectionAuthKeypair])
+          .rpc(confirmOptions);
+
+          metadataData = await mythicMetadataProgram.account.metadata.fetch(
+            metadataKey
+          );
+          collection = metadataData.collections[0];
+          item = collection.items[0];
+        } catch (e) {
+          console.log(e)
+        }
+      });
+      it("should have right length", () => {
+        expect(metadataData.items.length).to.eql(2);
       });
     });
 
@@ -550,9 +654,9 @@ describe("metadata", () => {
             metadata: metadataKey,
             itemMetadataKey: metadataItemMetadataKey,
             metadataMetadataKey: metadataMetadataKey,
-            updateAuthority: metadataCollectionUpdateAuthKeypair.publicKey,
+            issuingAuthority: metadataRootCollectionAuthKeypair.publicKey,
           })
-          .signers([metadataCollectionUpdateAuthKeypair])
+          .signers([metadataRootCollectionAuthKeypair])
           .rpc(confirmOptions);
 
         metadataData = await mythicMetadataProgram.account.metadata.fetch(
@@ -575,9 +679,9 @@ describe("metadata", () => {
             collectionMetadataKey: metadataCollectionMetadataKey,
             metadata: metadataKey,
             metadataMetadataKey: metadataMetadataKey,
-            updateAuthority: metadataCollectionUpdateAuthKeypair.publicKey,
+            issuingAuthority: metadataRootCollectionAuthKeypair.publicKey,
           })
-          .signers([metadataCollectionUpdateAuthKeypair])
+          .signers([metadataRootCollectionAuthKeypair])
           .rpc(confirmOptions);
 
         metadataData = await mythicMetadataProgram.account.metadata.fetch(
@@ -600,7 +704,7 @@ describe("metadata", () => {
             collectionMetadataKey: metadataCollectionMetadataKey,
             metadata: metadataKey,
             metadataMetadataKey: metadataMetadataKey,
-            updateAuthority: metadataRootCollectionAuthKeypair.publicKey,
+            issuingAuthority: metadataRootCollectionAuthKeypair.publicKey,
           })
           .signers([metadataRootCollectionAuthKeypair])
           .rpc(confirmOptions);
