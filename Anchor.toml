@@ -8,7 +8,10 @@ skip-lint = false
 mythic_metadata = "myThHf7Ec8WEFiVFeUEiuq1KPPmx3udRF7hehPQBaa3"
 
 [programs.devnet]
-mythic_metadata = "HASmJt3YnfzqkEnR93acGjT1pbVdoNB21zQdpnQqsXU3"
+mythic_metadata = "3jVdbJKJGUMTpGpykpyFyWAG9ry3DRoPqyM48opQa8m6"
+
+[programs.mainnet]
+mythic_metadata = "metaThtkusoWYDvHBFXfvc93Z3d8iBeDZ4DVyq8SYVR"
 
 [registry]
 url = "https://api.apr.dev"
@@ -16,10 +19,6 @@ url = "https://api.apr.dev"
 [provider]
 cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
-
-#[provider]
-#cluster = "devnet"
-#wallet = "../../sol/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
